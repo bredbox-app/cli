@@ -34,3 +34,16 @@ This project is a Node.js library .
 - Run `npx mocha <filename>` to execute tests for specific files; always do this until all tests pass for this file.
 - Run `npm test` to run all tests
 - Do not change the working directory when running tests
+
+## Pull Requests
+
+When creating pull requests, the title should follow Conventional Commits format (fetch https://www.conventionalcommits.org/en/v1.0.0/) using the following prefixes:
+
+- `feat: ` When adding new functionality
+- `fix: ` when fixing a bug
+- `docs: ` when updating only `.md` files
+- `chore: ` when making changes that do not affect users
+- `ci: ` when making changes to continuous integration workflows
+- `build: ` when making changes to the build process
+
+The title should reflect the primary goal of the pull request so if new functionality is added and documentation is updated, then `feat: ` is the appropriate title prefix.
