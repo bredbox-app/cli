@@ -1,13 +1,15 @@
-# Copilot Instructions
+# Agents Instructions
 
-This project is a Node.js library .
+This project is a Node.js library.
 
 ## Project Structure
 
-- `src` - Contains all source code
-- `tests` - Comprehensive test suite using Mocha
+- `src` - Source code and unit tests (`*.spec.ts`)
+- `tests` - Integration tests using Vitest (`*.test.ts`)
 
 ## Code Style and Patterns
+
+Read [`.github/instructions/javascript.instructions.md`](.github/instructions/javascript.instructions.md) for full code style guide.
 
 ### Error Handling
 
@@ -18,11 +20,11 @@ This project is a Node.js library .
 ## Dependencies and Tools
 
 - Node.js with ES modules
-- Mocha for testing
+- Vitest for testing
 - ESLint for linting
 - Prettier for formatting
-- JSDoc for type annotations
-- TypeScript for type checking
+- TypeScript for source code and type checking
+- tsc for building
 
 ## Testing Requirements
 
@@ -31,9 +33,9 @@ This project is a Node.js library .
 - Verify exact error messages
 - Test async behavior and concurrent operations
 - Mock external dependencies appropriately
-- Run `npx mocha <filename>` to execute tests for specific files; always do this until all tests pass for this file.
+- Unit tests
+- Run `npx vitest run <filename>` to execute tests for specific files; always do this until all tests pass for this file.
 - Run `npm test` to run all tests
-- Do not change the working directory when running tests
 
 ## Pull Requests
 

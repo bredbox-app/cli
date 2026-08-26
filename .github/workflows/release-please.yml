@@ -13,18 +13,18 @@ jobs:
             models: read
         runs-on: ubuntu-latest
         steps:
-            - uses: googleapis/release-please-action@v4
+            - uses: googleapis/release-please-action@v5
               id: release
               with:
                   token: ${{ secrets.GITHUB_TOKEN }}
 
             # The logic below handles the npm publication:
-            - uses: actions/checkout@v4
+            - uses: actions/checkout@v7
               # these if statements ensure that a publication only occurs when
               # a new release is created:
               if: ${{ steps.release.outputs.release_created }}
 
-            - uses: actions/setup-node@v4
+            - uses: actions/setup-node@v7
               with:
                   node-version: lts/*
                   registry-url: "https://registry.npmjs.org"
@@ -35,12 +35,6 @@ jobs:
 
             - name: Publish to npm
               run: npm publish
-              if: ${{ steps.release.outputs.release_created }}
-
-            - name: Publish to JSR
-              run: |
-                  npm run build
-                  npx jsr publish
               if: ${{ steps.release.outputs.release_created }}
 
             # Generates the social media post
