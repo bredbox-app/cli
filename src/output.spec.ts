@@ -16,6 +16,7 @@ import type { ApiResponse } from "./client.js";
 import { UsageError } from "./errors.js";
 import {
 	formatJson,
+	outputFormat,
 	shouldPrettyPrint,
 	writeResponse,
 	type Io,
@@ -28,17 +29,22 @@ import {
 /**
  * Creates streams that remember what was written.
  * @param tty Whether standard output is a terminal.
+ * @param columns The width of the terminal.
  * @returns The streams and the chunks written to them.
  */
-function fakeIo(tty = false): { io: Io; out: (string | Uint8Array)[] } {
+function fakeIo(
+	tty = false,
+	columns?: number,
+): { io: Io; out: (string | Uint8Array)[]; err: string[] } {
 	const out: (string | Uint8Array)[] = [];
+	const err: string[] = [];
 	const io: Io = {
-		stdout: { write: chunk => out.push(chunk), isTTY: tty },
-		stderr: { write: () => true, isTTY: tty },
+		stdout: { write: chunk => out.push(chunk), isTTY: tty, columns },
+		stderr: { write: chunk => err.push(String(chunk)), isTTY: tty },
 		stdin: Object.assign(Readable.from([]), { isTTY: false }),
 	};
 
-	return { io, out };
+	return { io, out, err };
 }
 
 let dir: string;
@@ -77,6 +83,21 @@ describe("shouldPrettyPrint()", () => {
 	});
 });
 
+describe("outputFormat()", () => {
+	it("should follow --table, then the flags that ask for JSON, then the terminal", () => {
+		const { io: tty } = fakeIo(true);
+		const { io: pipe } = fakeIo(false);
+
+		expect(outputFormat({ io: pipe, table: true })).toBe("table");
+		expect(outputFormat({ io: tty, json: true })).toBe("json");
+		expect(outputFormat({ io: tty, pretty: true })).toBe("json");
+		expect(outputFormat({ io: tty, compact: true })).toBe("json");
+		expect(outputFormat({ io: tty, output: "out.json" })).toBe("json");
+		expect(outputFormat({ io: tty })).toBe("table");
+		expect(outputFormat({ io: pipe })).toBe("json");
+	});
+});
+
 describe("writeResponse()", () => {
 	const json: ApiResponse = {
 		status: 200,
@@ -93,12 +114,68 @@ describe("writeResponse()", () => {
 		expect(out).toEqual(['{"a":[1,2]}\n']);
 	});
 
-	it("should write indented JSON on a terminal", () => {
+	it("should write fields on a terminal", () => {
 		const { io, out } = fakeIo(true);
 
 		writeResponse(json, { io });
 
+		expect(out).toEqual(["A: 1, 2\n"]);
+	});
+
+	it("should write indented JSON on a terminal with --json", () => {
+		const { io, out } = fakeIo(true);
+
+		writeResponse(json, { io, json: true });
+
 		expect(out).toEqual(['{\n  "a": [\n    1,\n    2\n  ]\n}\n']);
+	});
+
+	it("should write a table with --table when piped, with notes on standard error", () => {
+		const { io, out, err } = fakeIo(false);
+
+		writeResponse(
+			{
+				...json,
+				data: {
+					items: [{ id: "1", name: "One" }],
+					pagination: { page: 1, total_pages: 2, total_count: 2 },
+				},
+			},
+			{ io, table: true, columns: ["name"] },
+		);
+
+		expect(out).toEqual(["NAME\nOne\n"]);
+		expect(err).toEqual([
+			"Page 1 of 2 (2 total). Pass --page 2 for the next page.\n",
+		]);
+	});
+
+	it("should fit a table to the terminal and embolden its headings", () => {
+		const { io, out } = fakeIo(true, 20);
+
+		writeResponse(
+			{ ...json, data: [{ title: "A title that is far too long" }] },
+			{ io, color: true },
+		);
+
+		expect(out).toEqual([
+			"\u001B[1mTITLE\u001B[22m\nA title that is far…\n",
+		]);
+	});
+
+	it("should write a table to a file with --table, without width or color", () => {
+		const { io, out } = fakeIo(true, 10);
+		const path = join(dir, "table.txt");
+
+		writeResponse(
+			{ ...json, data: [{ title: "A title that is far too long" }] },
+			{ io, output: path, table: true, color: true },
+		);
+
+		expect(out).toEqual([]);
+		expect(readFileSync(path, "utf8")).toBe(
+			"TITLE\nA title that is far too long\n",
+		);
 	});
 
 	it("should write text with a trailing newline", () => {

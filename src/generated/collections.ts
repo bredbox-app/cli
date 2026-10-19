@@ -106,6 +106,7 @@ export const collections: CommandGroup = {
 			],
 			body: "none",
 			response: "json",
+			columns: ["id", "name", "item_count", "is_public"],
 		},
 		{
 			name: "update",
@@ -220,6 +221,7 @@ export const collections: CommandGroup = {
 					],
 					body: "none",
 					response: "json",
+					columns: ["id", "position", "save.title", "note"],
 				},
 				{
 					name: "remove",

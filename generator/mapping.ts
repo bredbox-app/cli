@@ -44,3 +44,44 @@ export const CONFIRMATIONS: Readonly<Record<string, string>> = {
 	delete_SavesDelete:
 		"This moves the save to the trash, or deletes it for good with --permanent.",
 };
+
+/**
+ * The columns of the table a list command prints on a terminal, by
+ * `operationId`, as dotted paths into each item of the list: `save.title`.
+ * A list command not here shows the first few short fields of its items,
+ * `id` first. The generator checks each path against the document.
+ */
+export const COLUMNS: Readonly<Record<string, readonly string[]>> = {
+	get_SavesList: ["id", "title", "site_name", "tags", "created_at"],
+	get_SavesSearch: ["save.id", "save.title", "snippet"],
+	get_TagSaves: ["id", "title", "site_name", "tags", "created_at"],
+	get_HighlightsList: ["id", "text", "comment", "created_at"],
+	get_ImportsList: [
+		"id",
+		"format",
+		"status",
+		"processed_count",
+		"error_count",
+		"created_at",
+	],
+	get_ExportsList: [
+		"id",
+		"format",
+		"status",
+		"saves_exported",
+		"created_at",
+		"expires_at",
+	],
+	get_CollectionsList: ["id", "name", "item_count", "is_public"],
+	get_CollectionItemsList: ["id", "position", "save.title", "note"],
+	get_TokensList: ["id", "name", "scopes", "expires_at", "last_used_at"],
+	get_TokensScopes: ["scope", "description"],
+	get_WebhooksEvents: ["event_type", "category", "description"],
+	get_WebhooksList: ["id", "name", "url", "status", "event_types"],
+	get_AuthorizationsList: [
+		"id",
+		"oauth_client.name",
+		"scopes",
+		"last_used_at",
+	],
+};

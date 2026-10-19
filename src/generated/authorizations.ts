@@ -56,6 +56,7 @@ export const authorizations: CommandGroup = {
 			],
 			body: "none",
 			response: "json",
+			columns: ["id", "oauth_client.name", "scopes", "last_used_at"],
 		},
 	],
 	groups: [],

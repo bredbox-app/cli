@@ -7,11 +7,12 @@ This project is the `bredbox` command line interface for the Bredbox API, a Node
 - `src` - The CLI runtime and its unit tests (`*.spec.ts`)
     - `cli.ts` resolves a command from the words given, parses its arguments, sends the request and prints the response
     - `args.ts`, `client.ts`, `config.ts`, `help.ts`, `output.ts` are the pieces it uses
+    - `human.ts` formats JSON responses for people: lists as tables, objects as fields
     - `local.ts` holds the hand-written `auth` commands
     - `types.ts` holds the types the generated files and the runtime share
     - `generated/` is written by `npm run generate`. **Never edit it by hand.** Change `generator/` and regenerate.
 - `generator` - The generation pipeline
-    - `mapping.ts` names every operation (`operationId` to `group.method`), describes the groups, and words the confirmations
+    - `mapping.ts` names every operation (`operationId` to `group.method`), words the confirmations, and picks the table columns of list commands
     - `annotate.ts` adds the Forge extensions to the OpenAPI document before Forge reads it
     - `plugin/` is the Forge plugin, compiled to WebAssembly, that turns Forge's model into `src/generated/`
     - `openapi.json` is the last fetched copy of the OpenAPI document, used by `npm run generate:offline` and by the tests
@@ -32,6 +33,7 @@ Read [`.github/instructions/javascript.instructions.md`](.github/instructions/ja
 ### Generated Code
 
 - To rename a command, change its entry in `generator/mapping.ts`, then run `npm run generate:offline`
+- To change the columns a list command prints on a terminal, change its entry in `COLUMNS` in `generator/mapping.ts`, then regenerate; the plugin checks each path against the response schema
 - To change what a command sends or how it is described, change `generator/plugin/command.ts`, then regenerate
 - To pick up API changes, run `npm run generate`, which fetches the live document and refreshes `generator/openapi.json`
 - The generation drift test fails until `src/generated/` is regenerated after any of these changes

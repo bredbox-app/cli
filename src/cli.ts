@@ -346,7 +346,11 @@ async function runCommand(
 		io,
 		pretty: parsed.globals.pretty,
 		compact: parsed.globals.compact,
+		json: parsed.globals.json,
+		table: parsed.globals.table,
 		output: parsed.globals.output,
+		columns: command.columns,
+		color: !env.NO_COLOR,
 	});
 
 	return 0;

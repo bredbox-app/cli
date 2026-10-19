@@ -199,9 +199,34 @@ describe("parseCommandLine()", () => {
 			output: "out.json",
 			pretty: true,
 			compact: true,
+			json: false,
+			table: false,
 			force: true,
 			dryRun: true,
 		});
+	});
+
+	it("should read --json and --table", () => {
+		expect(
+			parseCommandLine(command, ["abc", "--title", "t", "--json"]).globals
+				.json,
+		).toBe(true);
+		expect(
+			parseCommandLine(command, ["abc", "--title", "t", "--table"])
+				.globals.table,
+		).toBe(true);
+	});
+
+	it("should throw for --table with a flag that asks for JSON", () => {
+		for (const flag of ["json", "pretty", "compact"]) {
+			expect(() =>
+				parseCommandLine(command, ["--table", `--${flag}`], ["things"]),
+			).toThrow(
+				new UsageError(`Expected only one of --table and --${flag}.`, [
+					"things",
+				]),
+			);
+		}
 	});
 
 	it("should stop at --help without checking required arguments", () => {

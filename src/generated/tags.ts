@@ -123,6 +123,7 @@ export const tags: CommandGroup = {
 			],
 			body: "none",
 			response: "json",
+			columns: ["id", "title", "site_name", "tags", "created_at"],
 		},
 		{
 			name: "usage",

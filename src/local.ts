@@ -19,7 +19,7 @@ import {
 	type Settings,
 } from "./config.js";
 import { UsageError } from "./errors.js";
-import { formatJson, shouldPrettyPrint, type Io } from "./output.js";
+import { writeData, type Io } from "./output.js";
 import type { Command, CommandGroup } from "./types.js";
 
 //-----------------------------------------------------------------------------
@@ -134,24 +134,22 @@ function status(context: LocalContext): Record<string, unknown> {
 }
 
 /**
- * Writes a JSON result the way responses are written.
+ * Writes a result the way JSON responses are written.
  * @param context The context of the command.
  * @param data The result.
  * @returns Nothing.
  */
-function writeJson(context: LocalContext, data: unknown): void {
-	const { io, globals } = context;
+function writeResult(context: LocalContext, data: unknown): void {
+	const { io, globals, env } = context;
 
-	io.stdout.write(
-		formatJson(
-			data,
-			shouldPrettyPrint({
-				io,
-				pretty: globals.pretty,
-				compact: globals.compact,
-			}),
-		),
-	);
+	writeData(data, {
+		io,
+		pretty: globals.pretty,
+		compact: globals.compact,
+		json: globals.json,
+		table: globals.table,
+		color: !env.NO_COLOR,
+	});
 }
 
 //-----------------------------------------------------------------------------
@@ -208,7 +206,7 @@ const login: LocalCommand = {
 
 		writeConfig(configPath, next);
 
-		writeJson(context, {
+		writeResult(context, {
 			...status({
 				...context,
 				config: next,
@@ -230,7 +228,7 @@ const logout: LocalCommand = {
 	response: "json",
 	async run(context) {
 		deleteConfig(context.configPath);
-		writeJson(context, {
+		writeResult(context, {
 			...status({
 				...context,
 				config: {},
@@ -255,7 +253,7 @@ const authStatus: LocalCommand = {
 	body: "none",
 	response: "json",
 	async run(context) {
-		writeJson(context, status(context));
+		writeResult(context, status(context));
 	},
 };
 

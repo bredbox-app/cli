@@ -44,6 +44,12 @@ export interface GlobalFlags {
 	/** Whether to print JSON on one line. */
 	compact: boolean;
 
+	/** Whether to print JSON, even on a terminal. */
+	json: boolean;
+
+	/** Whether to print a table, even when piped. */
+	table: boolean;
+
 	/** Whether to skip confirmations. */
 	force: boolean;
 
@@ -201,6 +207,19 @@ export function parseCommandLine(
 	const globals = toGlobals(parsed.values);
 	const values: ArgValues = {};
 
+	if (globals.table) {
+		const clash = (["json", "pretty", "compact"] as const).find(
+			flag => globals[flag],
+		);
+
+		if (clash) {
+			throw new UsageError(
+				`Expected only one of --table and --${clash}.`,
+				commandPath,
+			);
+		}
+	}
+
 	if (globals.help) {
 		return { values, body: undefined, globals };
 	}
@@ -331,6 +350,8 @@ function globalOptions(): ParseArgsOptionsConfig {
 		output: { type: "string", short: "o" },
 		pretty: { type: "boolean" },
 		compact: { type: "boolean" },
+		json: { type: "boolean" },
+		table: { type: "boolean" },
 		force: { type: "boolean", short: "f" },
 		"dry-run": { type: "boolean" },
 	};
@@ -351,6 +372,8 @@ function toGlobals(values: Record<string, unknown>): GlobalFlags {
 		output: optionalString(values.output),
 		pretty: values.pretty === true,
 		compact: values.compact === true,
+		json: values.json === true,
+		table: values.table === true,
 		force: values.force === true,
 		dryRun: values["dry-run"] === true,
 	};

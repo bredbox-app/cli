@@ -62,7 +62,18 @@ Run `bredbox --help` for the groups, `bredbox saves --help` for the commands in 
 
 ### Output
 
-JSON responses are indented on a terminal and compact when piped; `--pretty` and `--compact` override that. Text responses, such as a save's content, print as-is. Binary responses, such as an export archive, go to `--output <file>`:
+On a terminal, JSON responses are formatted for reading: lists print as tables, with a note on standard error when there are more pages, and single objects print as aligned fields, with dates shown relative to now. When piped or written with `--output`, they print as JSON, so scripts and agents always get JSON.
+
+```shell
+$ bredbox saves list
+ID                                    TITLE                       SITE NAME   TAGS        CREATED AT
+0b6c1f7e-1c2d-4e5f-8a9b-0c1d2e3f4a5b  Understanding the JavaScr…  Human Who…  javascrip…  3 days ago
+Page 1 of 5 (93 total). Pass --page 2 for the next page.
+```
+
+`--json` prints JSON on a terminal, and `--table` prints tables and fields when piped. JSON is indented on a terminal and compact when piped; `--pretty` and `--compact` override that, and also ask for JSON. Set `NO_COLOR` to turn off bold headings.
+
+Text responses, such as a save's content, print as-is. Binary responses, such as an export archive, go to `--output <file>`:
 
 ```shell
 bredbox exports download <export-id> --output export.zip

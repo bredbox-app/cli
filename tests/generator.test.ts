@@ -15,7 +15,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { annotate, commandName, deriveName } from "../generator/annotate.ts";
-import { CONFIRMATIONS } from "../generator/mapping.ts";
+import { COLUMNS, CONFIRMATIONS } from "../generator/mapping.ts";
 
 //-----------------------------------------------------------------------------
 // Helpers
@@ -24,7 +24,7 @@ import { CONFIRMATIONS } from "../generator/mapping.ts";
 const ROOT = fileURLToPath(new URL("..", import.meta.url));
 const SAVED_SPEC = join(ROOT, "generator", "openapi.json");
 
-const NO_MAPPING = { operations: {}, confirmations: {} };
+const NO_MAPPING = { operations: {}, confirmations: {}, columns: {} };
 
 /**
  * A small document whose operations the Forge extensions name.
@@ -233,6 +233,7 @@ describe("annotate()", () => {
 		const { document, warnings, commands } = annotate(WIDGETS, {
 			operations: { post_WidgetsAdd: "widgets.create" },
 			confirmations: { delete_Widget: "This removes it with --hard." },
+			columns: {},
 		});
 
 		expect(warnings).toEqual([]);
@@ -244,10 +245,35 @@ describe("annotate()", () => {
 		).toBe("This removes it with --hard.");
 	});
 
+	it("should give operations the columns of the mapping", () => {
+		const { document, warnings } = annotate(WIDGETS, {
+			operations: {},
+			confirmations: {},
+			columns: { post_WidgetsAdd: ["id", "part.name"] },
+		});
+
+		expect(warnings).toEqual([]);
+		expect(document.paths!["/widgets"]!.post!["x-bredbox-columns"]).toEqual(
+			["id", "part.name"],
+		);
+		expect(
+			document.paths!["/widgets/{id}"]!.delete!["x-bredbox-columns"],
+		).toBeUndefined();
+	});
+
+	it("should give list commands of the saved document the columns of the mapping", () => {
+		const { document } = annotate(savedSpec());
+
+		expect(document.paths!["/saves"]!.get!["x-bredbox-columns"]).toEqual(
+			COLUMNS.get_SavesList,
+		);
+	});
+
 	it("should give a group the mapping moves the description it had in the document", () => {
 		const { document } = annotate(WIDGETS, {
 			operations: { post_WidgetsAdd: "parts.add" },
 			confirmations: {},
+			columns: {},
 		});
 
 		expect(document["x-forge-commands"]).toEqual({
@@ -263,12 +289,14 @@ describe("annotate()", () => {
 				post_Gone: "widgets.gone",
 			},
 			confirmations: { delete_Gone: "Gone." },
+			columns: { get_Gone: ["id"] },
 		});
 
 		expect(warnings).toEqual([
 			'post_WidgetsAdd is "widgets.parts.add" in both generator/mapping.ts and the OpenAPI document; remove it from generator/mapping.ts.',
 			"post_Gone is in OPERATIONS in generator/mapping.ts but not in the OpenAPI document.",
 			"delete_Gone is in CONFIRMATIONS in generator/mapping.ts but not in the OpenAPI document.",
+			"get_Gone is in COLUMNS in generator/mapping.ts but not in the OpenAPI document.",
 		]);
 	});
 

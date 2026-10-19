@@ -38,6 +38,8 @@ export const RESERVED_FLAGS: readonly string[] = [
 	"output",
 	"pretty",
 	"compact",
+	"json",
+	"table",
 	"force",
 	"dry-run",
 ];
@@ -125,6 +127,12 @@ export interface Command {
 
 	/** How the response is read. */
 	response: ResponseKind;
+
+	/**
+	 * The fields shown as the columns of a table when the response is a list,
+	 * as dotted paths into each item: `save.title`.
+	 */
+	columns?: string[];
 
 	/**
 	 * A sentence to confirm before running the command, which changes or

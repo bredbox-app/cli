@@ -4,7 +4,8 @@
  * Path parameters become positionals, in the order of the path template.
  * Query parameters and the fields of a JSON object body become flags. A
  * JSON array body becomes trailing positionals. A multipart body becomes
- * flags, with its file field taking a path to upload.
+ * flags, with its file field taking a path to upload. A command whose
+ * response is a list gets the columns of the table it prints.
  * @author Nicholas C. Zakas
  */
 
@@ -29,6 +30,7 @@ import {
 	type CommandGroup,
 	type ResponseKind,
 } from "../../src/types.ts";
+import { COLUMNS_EXTENSION } from "../annotate.ts";
 
 //-----------------------------------------------------------------------------
 // Helpers
@@ -329,6 +331,168 @@ function responseKind(method: Method): ResponseKind {
 }
 
 /**
+ * The most columns picked for a list that `COLUMNS` does not list.
+ */
+const MAX_COLUMNS = 6;
+
+/**
+ * Names a method as its command is typed, for messages.
+ * @param method The method.
+ * @returns The words of the command: `saves highlights list`.
+ */
+function commandWords(method: Method): string {
+	return [...method.group.path, method.name]
+		.map(name => name.kebab())
+		.join(" ");
+}
+
+/**
+ * Finds the type of the items of a list response: the response is an
+ * array of objects, or an object whose `items` is one.
+ * @param method The method.
+ * @returns The object type of each item, or undefined if the response is
+ * not a list of objects.
+ */
+function rowType(method: Method): ObjectType | undefined {
+	const content = method.responses.find(response => response.json)?.json;
+
+	if (!content) {
+		return undefined;
+	}
+
+	let list = unwrap(content.type);
+
+	if (list.kind === "object") {
+		const items = list.fields.find(field => field.wireName === "items");
+
+		if (!items) {
+			return undefined;
+		}
+
+		list = unwrap(items.type);
+	}
+
+	if (list.kind !== "array") {
+		return undefined;
+	}
+
+	const row = unwrap(list.elem);
+
+	return row.kind === "object" ? row : undefined;
+}
+
+/**
+ * Determines whether a value of `type` fits in a cell of a table: a
+ * scalar, or a list of scalars.
+ * @param type The type.
+ * @returns Whether it does.
+ */
+function fitsInCell(type: Type): boolean {
+	const resolved = unwrap(type);
+
+	switch (resolved.kind) {
+		case "scalar":
+			return !["unknown", "bytes", "binary"].includes(resolved.scalar);
+		case "enum":
+			return true;
+		case "array": {
+			const elem = unwrap(resolved.elem);
+			return elem.kind !== "array" && fitsInCell(elem);
+		}
+		default:
+			return false;
+	}
+}
+
+/**
+ * Determines whether a dotted path names a field of an object type.
+ * @param row The object type.
+ * @param path The path: `save.title`.
+ * @returns Whether it does.
+ */
+function hasPath(row: ObjectType, path: string): boolean {
+	let type: Type = row;
+
+	for (const key of path.split(".")) {
+		const resolved = unwrap(type);
+
+		if (resolved.kind !== "object") {
+			return false;
+		}
+
+		const field = resolved.fields.find(
+			candidate => candidate.wireName === key,
+		);
+
+		if (!field) {
+			return false;
+		}
+
+		type = field.type;
+	}
+
+	return true;
+}
+
+/**
+ * Picks the columns of the table a list command prints: those `COLUMNS`
+ * gives, or else the first few fields of each item that fit in a cell,
+ * `id` first, leaving out secrets.
+ * @param method The method.
+ * @returns The columns, or undefined if the response is not a list.
+ * @throws {TypeError} If `COLUMNS` gives a command columns it cannot have.
+ */
+function columnsOf(method: Method): string[] | undefined {
+	const row = rowType(method);
+	const given = method.extension(COLUMNS_EXTENSION);
+
+	if (given !== undefined) {
+		const where = `The columns of "${commandWords(method)}" in generator/mapping.ts`;
+
+		if (!row) {
+			throw new TypeError(
+				`${where} are for a list, but its response is not a list of objects.`,
+			);
+		}
+
+		if (
+			!Array.isArray(given) ||
+			given.length === 0 ||
+			!given.every(column => typeof column === "string")
+		) {
+			throw new TypeError(`${where} must be an array of field paths.`);
+		}
+
+		const columns = given as string[];
+		const missing = columns.find(column => !hasPath(row, column));
+
+		if (missing !== undefined) {
+			throw new TypeError(
+				`${where} include "${missing}", which its items do not have.`,
+			);
+		}
+
+		return [...columns];
+	}
+
+	if (!row) {
+		return undefined;
+	}
+
+	const columns = row.fields
+		.filter(field => !field.sensitive && fitsInCell(field.type))
+		.map(field => field.wireName);
+	const id = columns.indexOf("id");
+
+	if (id > 0) {
+		columns.splice(id, 1);
+		columns.unshift("id");
+	}
+
+	return columns.length > 0 ? columns.slice(0, MAX_COLUMNS) : undefined;
+}
+
+/**
  * Returns a name that no global flag uses.
  * @param arg The argument.
  * @returns The argument, renamed if it clashed.
@@ -413,6 +577,12 @@ export function command(method: Method): Command {
 		body: body.kind,
 		response: responseKind(method),
 	};
+
+	const columns = columnsOf(method);
+
+	if (columns) {
+		result.columns = columns;
+	}
 
 	if (method.confirmation !== undefined) {
 		result.confirmation = method.confirmation;

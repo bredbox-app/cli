@@ -15,7 +15,7 @@
 // Imports
 //-----------------------------------------------------------------------------
 
-import { CONFIRMATIONS, OPERATIONS } from "./mapping.ts";
+import { COLUMNS, CONFIRMATIONS, OPERATIONS } from "./mapping.ts";
 
 //-----------------------------------------------------------------------------
 // Types
@@ -50,6 +50,9 @@ export interface Mapping {
 
 	/** The confirmation of each operation, by `operationId`. */
 	confirmations: Readonly<Record<string, string>>;
+
+	/** The table columns of each list operation, by `operationId`. */
+	columns: Readonly<Record<string, readonly string[]>>;
 }
 
 /**
@@ -74,6 +77,11 @@ const GROUP_NAME = "x-fern-sdk-group-name";
 const METHOD_NAME = "x-fern-sdk-method-name";
 const CONFIRMATION = "x-forge-require-confirmation";
 const FORGE_COMMANDS = "x-forge-commands";
+
+/**
+ * The extension that carries the columns of `COLUMNS` to the plugin.
+ */
+export const COLUMNS_EXTENSION = "x-bredbox-columns";
 
 const HTTP_METHODS = new Set([
 	"get",
@@ -253,9 +261,13 @@ export function commandName(method: string): string {
  */
 export function annotate(
 	source: unknown,
-	mapping: Mapping = { operations: OPERATIONS, confirmations: CONFIRMATIONS },
+	mapping: Mapping = {
+		operations: OPERATIONS,
+		confirmations: CONFIRMATIONS,
+		columns: COLUMNS,
+	},
 ): AnnotateResult {
-	const { operations, confirmations } = mapping;
+	const { operations, confirmations, columns } = mapping;
 
 	if (typeof source !== "object" || source === null) {
 		throw new TypeError("Expected an OpenAPI document object.");
@@ -353,6 +365,10 @@ export function annotate(
 					`This will ${lowerFirst(operation.summary ?? "delete something")}.`;
 			}
 
+			if (columns[operationId]) {
+				operation[COLUMNS_EXTENSION] = [...columns[operationId]];
+			}
+
 			for (let i = 1; i <= parts.length; i++) {
 				groupPaths.add(parts.slice(0, i).join("."));
 			}
@@ -370,6 +386,7 @@ export function annotate(
 	for (const [table, ids] of [
 		["OPERATIONS", Object.keys(operations)],
 		["CONFIRMATIONS", Object.keys(confirmations)],
+		["COLUMNS", Object.keys(columns)],
 	] as const) {
 		for (const operationId of ids) {
 			if (!operationIds.has(operationId)) {

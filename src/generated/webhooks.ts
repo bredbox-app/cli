@@ -91,6 +91,7 @@ export const webhooks: CommandGroup = {
 			args: [],
 			body: "none",
 			response: "json",
+			columns: ["event_type", "category", "description"],
 		},
 		{
 			name: "get",
@@ -139,6 +140,7 @@ export const webhooks: CommandGroup = {
 			],
 			body: "none",
 			response: "json",
+			columns: ["id", "name", "url", "status", "event_types"],
 		},
 		{
 			name: "update",

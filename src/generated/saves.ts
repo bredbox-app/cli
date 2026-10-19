@@ -251,6 +251,7 @@ export const saves: CommandGroup = {
 			],
 			body: "none",
 			response: "json",
+			columns: ["id", "title", "site_name", "tags", "created_at"],
 		},
 		{
 			name: "restore",
@@ -346,6 +347,7 @@ export const saves: CommandGroup = {
 			],
 			body: "none",
 			response: "json",
+			columns: ["save.id", "save.title", "snippet"],
 		},
 		{
 			name: "status",
@@ -531,6 +533,7 @@ export const saves: CommandGroup = {
 					],
 					body: "none",
 					response: "json",
+					columns: ["id", "text", "comment", "created_at"],
 				},
 				{
 					name: "update",

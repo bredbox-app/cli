@@ -37,6 +37,8 @@ export const GLOBAL_OPTION_ROWS: readonly Row[] = [
 	["-o, --output <file>", "Write the response to a file"],
 	["--pretty", "Indent JSON output (default when writing to a terminal)"],
 	["--compact", "Print JSON on one line (default when piped)"],
+	["--json", "Print JSON, even on a terminal"],
+	["--table", "Print tables and fields (default on a terminal)"],
 	["-f, --force", "Skip confirmation prompts"],
 	["--dry-run", "Print the request instead of sending it"],
 	["-h, --help", "Show help"],

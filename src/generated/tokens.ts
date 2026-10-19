@@ -113,6 +113,7 @@ export const tokens: CommandGroup = {
 			],
 			body: "none",
 			response: "json",
+			columns: ["id", "name", "scopes", "expires_at", "last_used_at"],
 		},
 		{
 			name: "regenerate",
@@ -144,6 +145,7 @@ export const tokens: CommandGroup = {
 			args: [],
 			body: "none",
 			response: "json",
+			columns: ["scope", "description"],
 		},
 		{
 			name: "update",

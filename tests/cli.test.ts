@@ -289,6 +289,82 @@ describe("bredbox saves list", () => {
 		expect(calls[0].headers.Accept).toBe("application/json");
 		expect(out).toEqual(['{"items":[]}\n']);
 	});
+
+	it("should print a table of the save columns on a terminal", async () => {
+		const { io, text, err } = fakeIo({ tty: true });
+		const { fetch } = fakeFetch(() =>
+			json(200, {
+				items: [
+					{
+						id: "save-1",
+						url: "https://example.com/a",
+						title: "An article",
+						site_name: "Example",
+						tags: ["reading", "later"],
+						created_at: "2026-10-19T12:00:00Z",
+						is_favorite: true,
+					},
+				],
+				pagination: {
+					page: 1,
+					per_page: 1,
+					total_pages: 2,
+					total_count: 2,
+				},
+			}),
+		);
+
+		const code = await run(["saves", "list"], {
+			io,
+			env: { ...env, NO_COLOR: "1" },
+			configPath,
+			fetch,
+		});
+
+		expect(code).toBe(0);
+		expect(text().split("\n")[0]).toBe(
+			"ID      TITLE       SITE NAME  TAGS            CREATED AT",
+		);
+		expect(text()).toContain(
+			"save-1  An article  Example    reading, later  ",
+		);
+		expect(err).toEqual([
+			"Page 1 of 2 (2 total). Pass --page 2 for the next page.\n",
+		]);
+	});
+
+	it("should print JSON on a terminal with --json", async () => {
+		const { io, out } = fakeIo({ tty: true });
+		const { fetch } = fakeFetch(() => json(200, { items: [] }));
+
+		const code = await run(["saves", "list", "--json"], {
+			io,
+			env,
+			configPath,
+			fetch,
+		});
+
+		expect(code).toBe(0);
+		expect(out).toEqual(['{\n  "items": []\n}\n']);
+	});
+
+	it("should refuse --table with --json before sending anything", async () => {
+		const { io, err } = fakeIo({ tty: true });
+		const { fetch, calls } = fakeFetch(() => json(200, { items: [] }));
+
+		const code = await run(["saves", "list", "--table", "--json"], {
+			io,
+			env,
+			configPath,
+			fetch,
+		});
+
+		expect(code).toBe(2);
+		expect(calls).toHaveLength(0);
+		expect(err.join("")).toContain(
+			"Expected only one of --table and --json.",
+		);
+	});
 });
 
 describe("bredbox saves add", () => {
@@ -536,6 +612,24 @@ describe("bredbox auth", () => {
 			apiUrl: "https://api.test/v2",
 			apiUrlSource: "environment",
 		});
+
+		const table = fakeIo();
+		await run(["auth", "status", "--table"], {
+			io: table.io,
+			env: quiet,
+			configPath: ownConfig,
+			fetch,
+		});
+		expect(table.text()).toBe(
+			[
+				`Config path:    ${ownConfig}`,
+				"Authenticated:  yes",
+				"Token source:   config",
+				"API URL:        https://api.test/v2",
+				"API URL source: environment",
+				"",
+			].join("\n"),
+		);
 
 		const me = fakeIo();
 		await run(["me", "get"], {
