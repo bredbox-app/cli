@@ -70,3 +70,6 @@ tests/fixtures/typescript-project/index.js
 dist/env.js
 
 tmp
+
+# forge plugin compiled for generation
+generator/plugin.wasm

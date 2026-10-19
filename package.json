@@ -1,22 +1,16 @@
 {
-  "name": "@humanwhocodes/replace-me",
+  "name": "@bredbox/cli",
   "version": "0.0.0",
-  "description": "Replace me",
+  "description": "Command line interface for the Bredbox API, generated from its OpenAPI document with Cloudflare Forge",
   "type": "module",
-  "main": "dist/index.js",
-  "module": "dist/index.js",
-  "types": "dist/index.d.ts",
-  "exports": {
-    "import": {
-      "types": "./dist/index.d.ts",
-      "default": "./dist/index.js"
-    }
+  "bin": {
+    "bredbox": "dist/bin.js"
   },
   "files": [
     "dist"
   ],
   "engines": {
-    "node": ">=22"
+    "node": ">=22.18"
   },
   "publishConfig": {
     "access": "public"
@@ -39,22 +33,31 @@
   },
   "scripts": {
     "build": "tsc",
-    "lint": "eslint src/ tests/",
+    "generate": "node scripts/generate.ts",
+    "generate:offline": "node scripts/generate.ts --offline",
+    "lint": "eslint src/ tests/ generator/ scripts/",
     "fmt": "prettier --write .",
     "prepublishOnly": "npm run build",
     "test": "vitest run",
-    "test:watch": "vitest",
-    "test:attw": "attw --pack --profile esm-only"
+    "test:watch": "vitest"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/humanwhocodes/replace-me.git"
+    "url": "git+https://github.com/bredbox-app/cli.git"
   },
-  "keywords": [],
+  "homepage": "https://bredbox.app",
+  "keywords": [
+    "bredbox",
+    "cli",
+    "read-it-later",
+    "bookmarks",
+    "openapi"
+  ],
   "author": "Nicholas C. Zakas",
   "license": "Apache-2.0",
   "devDependencies": {
-    "@arethetypeswrong/cli": "^0.18.5",
+    "@bytecodealliance/jco": "1.37.0",
+    "@cloudflare/forge": "https://pkg.pr.new/cloudflare/forge/@cloudflare/forge@7e230c1f40514ceffe7001823c158f4f0380f7bd",
     "@eslint/js": "^10.0.1",
     "@types/node": "^26.3.0",
     "eslint": "^10.9.1",

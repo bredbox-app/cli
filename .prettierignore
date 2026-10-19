@@ -1,3 +1,4 @@
 dist
 CHANGELOG.md
 .prettierignore
+generator/openapi.json

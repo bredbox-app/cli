@@ -1,0 +1,89 @@
+name: Sync generated files
+
+on:
+    schedule:
+        - cron: "0 2 * * *"
+    workflow_dispatch:
+
+permissions:
+    contents: write
+    pull-requests: write
+
+concurrency:
+    group: sync-generated-files
+    cancel-in-progress: true
+
+jobs:
+    sync:
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Check out repository
+              uses: actions/checkout@v7
+              with:
+                  fetch-depth: 0
+
+            - name: Set up Node.js
+              uses: actions/setup-node@v7
+              with:
+                  node-version: "lts/*"
+                  cache: "npm"
+
+            - name: Install dependencies
+              run: npm ci
+
+            - name: Regenerate files from the live API
+              run: npm run generate
+
+            - name: Check for changes
+              id: changes
+              run: |
+                  if [ -n "$(git status --porcelain)" ]; then
+                    echo "changed=true" >> "$GITHUB_OUTPUT"
+                  else
+                    echo "changed=false" >> "$GITHUB_OUTPUT"
+                  fi
+
+            - name: Create or update pull request
+              if: steps.changes.outputs.changed == 'true'
+              env:
+                  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+              run: |
+                  set -euo pipefail
+
+                  PR_TITLE='fix: Sync with live API'
+                  BRANCH_NAME='fix/sync-with-live-api'
+
+                  git config user.name 'github-actions[bot]'
+                  git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+
+                  EXISTING_BRANCH="$(gh pr list --state open --search "$PR_TITLE in:title" --json headRefName --jq '.[0].headRefName')"
+
+                  git reset --hard HEAD
+                  git clean -fd
+
+                  if [ -n "$EXISTING_BRANCH" ]; then
+                    git fetch origin "$EXISTING_BRANCH"
+                    git checkout -B "$EXISTING_BRANCH" "origin/$EXISTING_BRANCH"
+                    git merge origin/main --no-edit || true
+                  else
+                    git checkout -B "$BRANCH_NAME"
+                  fi
+
+                  npm run generate
+
+                  git add -A
+                  if ! git diff --cached --quiet; then
+                    git commit -m 'fix: Sync generated files with the live API'
+                  fi
+                  git push origin HEAD --force-with-lease
+
+                  if [ -n "$EXISTING_BRANCH" ]; then
+                    exit 0
+                  fi
+
+                  gh pr create \
+                    --title "$PR_TITLE" \
+                    --body 'This PR regenerates the commands from the live Bredbox OpenAPI document.' \
+                    --base main \
+                    --head "$BRANCH_NAME"
