@@ -31,10 +31,18 @@ Node.js 22.18 or later is required.
 Create an API token in your Bredbox account settings, then save it:
 
 ```shell
-bredbox auth login --token <token>
+bredbox auth login
 ```
 
-The token is checked against the API and saved in a config file (`~/.config/bredbox/config.json`, or `%APPDATA%\bredbox\config.json` on Windows). You can instead set the `BREDBOX_TOKEN` environment variable, or pass `--token` to any command. `bredbox auth status` shows which one is in use, and `bredbox auth logout` deletes the saved token.
+The command asks for the token without showing what you type. In a script, pipe the token in instead:
+
+```shell
+bredbox auth login < token.txt
+```
+
+The token is checked against the API and saved in a config file (`~/.config/bredbox/config.json`, or `%APPDATA%\bredbox\config.json` on Windows). You can instead set the `BREDBOX_TOKEN` environment variable, which takes precedence over the saved token. `bredbox auth status` shows which one is in use, and `bredbox auth logout` deletes the saved token.
+
+There is no `--token` flag: a token on the command line is visible to other processes and is saved in your shell history.
 
 ### Commands
 

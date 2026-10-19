@@ -18,8 +18,8 @@ import {
 	type Config,
 	type Settings,
 } from "./config.js";
-import { UsageError } from "./errors.js";
-import { writeData, type Io } from "./output.js";
+import { CancelledError, UsageError } from "./errors.js";
+import { writeData, type InputStream, type Io } from "./output.js";
 import type { Command, CommandGroup } from "./types.js";
 
 //-----------------------------------------------------------------------------
@@ -98,6 +98,96 @@ async function readAll(stream: NodeJS.ReadableStream): Promise<string> {
 }
 
 /**
+ * Asks for a secret on the terminal without showing what is typed.
+ * @param stdin The terminal to read from, which must support raw mode.
+ * @param stderr The stream to write the prompt to.
+ * @param message The prompt.
+ * @returns What was typed, without the final newline.
+ * @throws {CancelledError} If the user presses Ctrl+C.
+ */
+async function readHidden(
+	stdin: InputStream & { setRawMode(mode: boolean): unknown },
+	stderr: Io["stderr"],
+	message: string,
+): Promise<string> {
+	stderr.write(message);
+	stdin.setRawMode(true);
+
+	try {
+		return await new Promise<string>((resolve, reject) => {
+			let text = "";
+
+			const finish = (error?: Error): void => {
+				stdin.off("data", onData);
+				stdin.off("end", onEnd);
+				stdin.pause();
+				stderr.write("\n");
+
+				if (error) {
+					reject(error);
+				} else {
+					resolve(text);
+				}
+			};
+
+			const onData = (chunk: string | Buffer): void => {
+				for (const char of chunk.toString()) {
+					if (char === "\r" || char === "\n" || char === "\u0004") {
+						finish();
+						return;
+					}
+
+					if (char === "\u0003") {
+						finish(new CancelledError("Cancelled."));
+						return;
+					}
+
+					if (char === "\u007f" || char === "\b") {
+						text = text.slice(0, -1);
+					} else {
+						text += char;
+					}
+				}
+			};
+
+			const onEnd = (): void => finish();
+
+			stdin.on("data", onData);
+			stdin.on("end", onEnd);
+			stdin.resume();
+		});
+	} finally {
+		stdin.setRawMode(false);
+	}
+}
+
+/**
+ * Reads the token to log in with: from standard input when it is piped, or
+ * from a hidden prompt when it is a terminal.
+ * @param io The streams.
+ * @returns The token, trimmed, which may be empty.
+ */
+async function readToken(io: Io): Promise<string> {
+	const { stdin, stderr } = io;
+
+	if (!stdin.isTTY) {
+		return (await readAll(stdin)).trim();
+	}
+
+	if (typeof stdin.setRawMode !== "function") {
+		return "";
+	}
+
+	return (
+		await readHidden(
+			stdin as InputStream & { setRawMode(mode: boolean): unknown },
+			stderr,
+			"Paste your access token: ",
+		)
+	).trim();
+}
+
+/**
  * Describes where the token in use comes from.
  * @param context The context of the command.
  * @returns A JSON-friendly summary of the auth settings.
@@ -106,9 +196,7 @@ function status(context: LocalContext): Record<string, unknown> {
 	const { globals, env, config, settings, configPath } = context;
 	let tokenSource: string | null = null;
 
-	if (globals.token) {
-		tokenSource = "flag";
-	} else if (env[TOKEN_ENV]) {
+	if (env[TOKEN_ENV]) {
 		tokenSource = "environment";
 	} else if (config.token) {
 		tokenSource = "config";
@@ -160,7 +248,7 @@ const login: LocalCommand = {
 	name: "login",
 	summary: "Save an access token for later commands",
 	description:
-		"Checks the token given with --token against the API, then saves it in the config file. Create tokens in your Bredbox account settings. The token may also be piped on standard input instead.",
+		"Asks for an access token, checks it against the API, then saves it in the config file. Create tokens in your Bredbox account settings. In scripts, pipe the token on standard input instead.",
 	method: "",
 	path: "",
 	args: [
@@ -179,15 +267,11 @@ const login: LocalCommand = {
 	response: "json",
 	async run(context) {
 		const { values, globals, io, config, configPath, client } = context;
-		let token = globals.token;
-
-		if (token === undefined && !io.stdin.isTTY) {
-			token = (await readAll(io.stdin)).trim();
-		}
+		const token = await readToken(io);
 
 		if (!token) {
 			throw new UsageError(
-				"Expected --token <token>, or a token on standard input.",
+				"Expected a token at the prompt or on standard input.",
 				["auth", "login"],
 			);
 		}
@@ -234,10 +318,7 @@ const logout: LocalCommand = {
 				config: {},
 				settings: {
 					...context.settings,
-					token:
-						context.globals.token ??
-						context.env[TOKEN_ENV] ??
-						undefined,
+					token: context.env[TOKEN_ENV] || undefined,
 				},
 			}),
 		});

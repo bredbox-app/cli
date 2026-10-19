@@ -32,6 +32,9 @@ export interface OutputStream {
  */
 export interface InputStream extends NodeJS.ReadableStream {
 	isTTY?: boolean | undefined;
+
+	/** Turns raw mode on or off, if it is a terminal. */
+	setRawMode?: ((mode: boolean) => unknown) | undefined;
 }
 
 /**

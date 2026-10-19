@@ -164,8 +164,8 @@ describe("resolveCommand()", () => {
 
 	it("should move global flags between the words to the rest", () => {
 		const resolution = resolveCommand(groups, [
-			"--token",
-			"t",
+			"--api-url",
+			"https://api.test",
 			"things",
 			"--api-url=https://api.test",
 			"-f",
@@ -178,8 +178,8 @@ describe("resolveCommand()", () => {
 			kind: "command",
 			path: ["things", "delete"],
 			rest: [
-				"--token",
-				"t",
+				"--api-url",
+				"https://api.test",
 				"--api-url=https://api.test",
 				"-f",
 				"abc",
@@ -189,9 +189,9 @@ describe("resolveCommand()", () => {
 	});
 
 	it("should keep global flags with no command in the rest", () => {
-		expect(resolveCommand(groups, ["--token", "t", "--version"])).toEqual({
+		expect(resolveCommand(groups, ["-o", "t", "--version"])).toEqual({
 			kind: "root",
-			rest: ["--token", "t", "--version"],
+			rest: ["-o", "t", "--version"],
 		});
 	});
 
@@ -361,18 +361,13 @@ describe("run()", () => {
 		const { fetch, calls } = jsonFetch(200, {});
 
 		expect(
-			await run(
-				[
-					"--token",
-					"secret",
-					"--api-url",
-					"https://api.test",
-					"things",
-					"get",
-					"1",
-				],
-				{ io, groups, env, configPath, fetch },
-			),
+			await run(["--api-url", "https://api.test", "things", "get", "1"], {
+				io,
+				groups,
+				env: { BREDBOX_TOKEN: "secret" },
+				configPath,
+				fetch,
+			}),
 		).toBe(0);
 		expect(calls[0].url).toBe("https://api.test/things/1");
 		expect(
@@ -380,11 +375,11 @@ describe("run()", () => {
 		).toBe("Bearer secret");
 	});
 
-	it("should take the token from a flag over the environment", async () => {
-		const { io } = fakeIo();
+	it("should reject --token without sending the request", async () => {
+		const { io, err } = fakeIo();
 		const { fetch, calls } = jsonFetch(200, {});
 
-		await run(["things", "get", "1", "--token", "flag"], {
+		const code = await run(["things", "get", "1", "--token", "flag"], {
 			io,
 			groups,
 			env: { BREDBOX_TOKEN: "env", BREDBOX_API_URL: "https://api.test" },
@@ -392,9 +387,11 @@ describe("run()", () => {
 			fetch,
 		});
 
-		expect(
-			(calls[0].init.headers as Record<string, string>).Authorization,
-		).toBe("Bearer flag");
+		expect(code).toBe(2);
+		expect(calls).toEqual([]);
+		expect(err[0]).toBe(
+			"bredbox: The --token flag was removed because it exposes the token. Run 'bredbox auth login' to save one, or set BREDBOX_TOKEN.\n",
+		);
 	});
 
 	it("should report an API error and exit with 1", async () => {

@@ -108,7 +108,8 @@ describe("rootHelp()", () => {
 		expect(help).toContain("Usage: bredbox <command> [options]");
 		expect(help).toContain("A CLI.");
 		expect(help).toContain("  things  Things to do");
-		expect(help).toContain("--token <token>");
+		expect(help).toContain("--api-url <url>");
+		expect(help).not.toContain("--token");
 		expect(help).toContain("-h, --help");
 	});
 });

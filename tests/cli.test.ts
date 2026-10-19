@@ -68,6 +68,26 @@ function fakeIo({
 }
 
 /**
+ * Creates streams whose standard input is a terminal that supports raw mode
+ * and on which `keys` are typed.
+ * @param keys What is typed, which may be split across several chunks.
+ * @returns The streams, what was written, and the raw mode changes.
+ */
+function fakeTerminal(...keys: string[]): Fake & { rawModes: boolean[] } {
+	const fake = fakeIo({ tty: true });
+	const rawModes: boolean[] = [];
+
+	fake.io.stdin = Object.assign(Readable.from(keys), {
+		isTTY: true,
+		setRawMode(mode: boolean) {
+			rawModes.push(mode);
+		},
+	});
+
+	return { ...fake, rawModes };
+}
+
+/**
  * Creates a fetch that records requests and answers them with `respond`.
  * @param respond Builds the response for a request.
  * @returns The fetch and the requests.
@@ -578,8 +598,8 @@ describe("bredbox auth", () => {
 		const { fetch, calls } = fakeFetch(() => json(200, { id: "user-1" }));
 		const quiet = { BREDBOX_API_URL: "https://api.test/v2" };
 
-		const login = fakeIo();
-		const code = await run(["auth", "login", "--token", "saved-token"], {
+		const login = fakeIo({ stdin: "saved-token\n" });
+		const code = await run(["auth", "login"], {
 			io: login.io,
 			env: quiet,
 			configPath: ownConfig,
@@ -674,9 +694,9 @@ describe("bredbox auth", () => {
 	it("should not save a token the API rejects", async () => {
 		const ownConfig = join(dir, "rejected", "config.json");
 		const { fetch } = fakeFetch(() => json(401, { error: "Unauthorized" }));
-		const { io, err } = fakeIo();
+		const { io, err } = fakeIo({ stdin: "bad" });
 
-		const code = await run(["auth", "login", "--token", "bad"], {
+		const code = await run(["auth", "login"], {
 			io,
 			env: {},
 			configPath: ownConfig,
@@ -688,14 +708,75 @@ describe("bredbox auth", () => {
 		expect(() => readFileSync(ownConfig)).toThrow();
 	});
 
-	it("should fail without a token or standard input", async () => {
-		const { io, err } = fakeIo({ tty: true });
+	it("should ask for the token on a terminal without showing it", async () => {
+		const ownConfig = join(dir, "prompt", "config.json");
+		const { fetch, calls } = fakeFetch(() => json(200, { id: "user-1" }));
+		const { io, err, rawModes } = fakeTerminal("typed-tokx", "\u007fen\r");
+
+		const code = await run(["auth", "login"], {
+			io,
+			env: {},
+			configPath: ownConfig,
+			fetch,
+		});
+
+		expect(code).toBe(0);
+		expect(err).toEqual(["Paste your access token: ", "\n"]);
+		expect(rawModes).toEqual([true, false]);
+		expect(calls[0].headers.Authorization).toBe("Bearer typed-token");
+		expect(JSON.parse(readFileSync(ownConfig, "utf8"))).toEqual({
+			token: "typed-token",
+		});
+	});
+
+	it("should cancel the prompt on Ctrl+C", async () => {
+		const ownConfig = join(dir, "cancelled", "config.json");
+		const { io, err, rawModes } = fakeTerminal("abc\u0003def\r");
+
+		const code = await run(["auth", "login"], {
+			io,
+			env: {},
+			configPath: ownConfig,
+		});
+
+		expect(code).toBe(1);
+		expect(err.at(-1)).toBe("bredbox: Cancelled.\n");
+		expect(rawModes).toEqual([true, false]);
+		expect(() => readFileSync(ownConfig)).toThrow();
+	});
+
+	it("should fail when nothing is typed at the prompt", async () => {
+		const { io, err } = fakeTerminal("\r");
+
+		const code = await run(["auth", "login"], { io, env: {}, configPath });
+
+		expect(code).toBe(2);
+		expect(err).toContain(
+			"bredbox: Expected a token at the prompt or on standard input.\n",
+		);
+	});
+
+	it("should fail without a token on standard input", async () => {
+		const { io, err } = fakeIo({ stdin: "  \n" });
 
 		const code = await run(["auth", "login"], { io, env: {}, configPath });
 
 		expect(code).toBe(2);
 		expect(err[0]).toBe(
-			"bredbox: Expected --token <token>, or a token on standard input.\n",
+			"bredbox: Expected a token at the prompt or on standard input.\n",
 		);
+	});
+
+	it("should reject --token", async () => {
+		const { io, err } = fakeIo({ stdin: "piped-token\n" });
+
+		const code = await run(["auth", "login", "--token", "t"], {
+			io,
+			env: {},
+			configPath,
+		});
+
+		expect(code).toBe(2);
+		expect(err[0]).toMatch(/^bredbox: The --token flag was removed /u);
 	});
 });

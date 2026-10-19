@@ -175,8 +175,6 @@ describe("parseCommandLine()", () => {
 
 	it("should read the global flags from anywhere on the line", () => {
 		const { globals } = parseCommandLine(command, [
-			"--token",
-			"tok",
 			"abc",
 			"--api-url",
 			"http://localhost:8787",
@@ -193,7 +191,6 @@ describe("parseCommandLine()", () => {
 		expect(globals).toEqual({
 			help: false,
 			version: false,
-			token: "tok",
 			apiUrl: "http://localhost:8787",
 			body: undefined,
 			output: "out.json",
@@ -396,13 +393,13 @@ describe("parseGlobals()", () => {
 		const { globals, words } = parseGlobals([
 			"saves",
 			"list",
-			"--token",
-			"t",
+			"--api-url",
+			"https://api.test",
 			"-h",
 		]);
 
 		expect(words).toEqual(["saves", "list"]);
-		expect(globals.token).toBe("t");
+		expect(globals.apiUrl).toBe("https://api.test");
 		expect(globals.help).toBe(true);
 	});
 });

@@ -31,7 +31,6 @@ export const PROGRAM = "bredbox";
  * The global options, as rows of help.
  */
 export const GLOBAL_OPTION_ROWS: readonly Row[] = [
-	["--token <token>", "Access token (or set BREDBOX_TOKEN)"],
 	["--api-url <url>", "API base URL (or set BREDBOX_API_URL)"],
 	["--body <json|@file>", "Send this JSON as the request body"],
 	["-o, --output <file>", "Write the response to a file"],

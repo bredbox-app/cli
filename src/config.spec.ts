@@ -130,13 +130,13 @@ describe("resolveSettings()", () => {
 
 	it("should prefer flags over the environment and the config", () => {
 		const settings = resolveSettings({
-			flags: { token: "flag", apiUrl: "https://flag/" },
+			flags: { apiUrl: "https://flag/" },
 			env: { BREDBOX_TOKEN: "env", BREDBOX_API_URL: "https://env" },
 			config: { token: "config", apiUrl: "https://config" },
 			defaultApiUrl,
 		});
 
-		expect(settings).toEqual({ token: "flag", apiUrl: "https://flag" });
+		expect(settings).toEqual({ token: "env", apiUrl: "https://flag" });
 	});
 
 	it("should prefer the environment over the config", () => {
@@ -163,9 +163,9 @@ describe("resolveSettings()", () => {
 
 	it("should treat blank values as missing", () => {
 		const settings = resolveSettings({
-			flags: { token: "  " },
-			env: { BREDBOX_TOKEN: "" },
-			config: {},
+			flags: {},
+			env: { BREDBOX_TOKEN: "  " },
+			config: { token: "" },
 			defaultApiUrl,
 		});
 

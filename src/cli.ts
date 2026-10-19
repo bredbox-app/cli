@@ -286,7 +286,7 @@ async function runCommand(
 
 	const config = readConfig(configPath);
 	const settings = resolveSettings({
-		flags: { token: parsed.globals.token, apiUrl: parsed.globals.apiUrl },
+		flags: { apiUrl: parsed.globals.apiUrl },
 		env,
 		config,
 		defaultApiUrl: api.baseUrl,
@@ -323,7 +323,7 @@ async function runCommand(
 
 	if (settings.token === undefined) {
 		throw new UsageError(
-			`No access token. Run '${PROGRAM} auth login --token <token>' to save one, or set BREDBOX_TOKEN.`,
+			`No access token. Run '${PROGRAM} auth login' to save one, or set BREDBOX_TOKEN.`,
 			path,
 		);
 	}

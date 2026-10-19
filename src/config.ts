@@ -1,9 +1,9 @@
 /**
  * @fileoverview Where the CLI keeps its settings, and how it resolves them.
  *
- * The access token and API URL come, in order of precedence, from flags,
- * environment variables, and the config file that `bredbox auth login`
- * writes.
+ * The access token comes from the environment, then the config file that
+ * `bredbox auth login` writes. The API URL comes from a flag, then the
+ * environment, then the config file.
  * @author Nicholas C. Zakas
  */
 
@@ -45,7 +45,6 @@ export interface Settings {
  * The flags that affect settings.
  */
 export interface SettingsFlags {
-	token?: string | undefined;
 	apiUrl?: string | undefined;
 }
 
@@ -186,7 +185,7 @@ export function resolveSettings({
 	config: Config;
 	defaultApiUrl: string;
 }): Settings {
-	const token = firstNonEmpty(flags.token, env[TOKEN_ENV], config.token);
+	const token = firstNonEmpty(env[TOKEN_ENV], config.token);
 	const apiUrl =
 		firstNonEmpty(flags.apiUrl, env[API_URL_ENV], config.apiUrl) ??
 		defaultApiUrl;

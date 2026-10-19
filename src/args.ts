@@ -10,6 +10,7 @@
 import { readFileSync } from "node:fs";
 import { parseArgs, type ParseArgsOptionsConfig } from "node:util";
 import { UsageError } from "./errors.js";
+import { PROGRAM } from "./help.js";
 import { RESERVED_FLAGS, type Arg, type Command } from "./types.js";
 
 //-----------------------------------------------------------------------------
@@ -25,9 +26,6 @@ export interface GlobalFlags {
 
 	/** Whether to show the version. */
 	version: boolean;
-
-	/** The access token to use. */
-	token?: string | undefined;
 
 	/** The API base URL to use. */
 	apiUrl?: string | undefined;
@@ -204,6 +202,13 @@ export function parseCommandLine(
 		throw new UsageError(cleanParseError(error), commandPath);
 	}
 
+	if (parsed.values.token !== undefined) {
+		throw new UsageError(
+			`The --token flag was removed because it exposes the token. Run '${PROGRAM} auth login' to save one, or set BREDBOX_TOKEN.`,
+			commandPath,
+		);
+	}
+
 	const globals = toGlobals(parsed.values);
 	const values: ArgValues = {};
 
@@ -344,6 +349,7 @@ function globalOptions(): ParseArgsOptionsConfig {
 	return {
 		help: { type: "boolean", short: "h" },
 		version: { type: "boolean", short: "v" },
+		// Removed, but still recognized so that it fails with a helpful message.
 		token: { type: "string" },
 		"api-url": { type: "string" },
 		body: { type: "string" },
@@ -366,7 +372,6 @@ function toGlobals(values: Record<string, unknown>): GlobalFlags {
 	return {
 		help: values.help === true,
 		version: values.version === true,
-		token: optionalString(values.token),
 		apiUrl: optionalString(values["api-url"]),
 		body: optionalString(values.body),
 		output: optionalString(values.output),
