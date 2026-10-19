@@ -30,7 +30,7 @@ import {
 	type CommandGroup,
 	type ResponseKind,
 } from "../../src/types.ts";
-import { COLUMNS_EXTENSION } from "../annotate.ts";
+import { COLUMNS_EXTENSION, FLAGS_EXTENSION } from "../annotate.ts";
 
 //-----------------------------------------------------------------------------
 // Helpers
@@ -493,6 +493,66 @@ function columnsOf(method: Method): string[] | undefined {
 }
 
 /**
+ * Renames the flags that `FLAGS` gives other names.
+ * @param method The method.
+ * @param flags The flags of the method, before any are renamed.
+ * @returns The flags, renamed.
+ * @throws {TypeError} If `FLAGS` gives a command flags it cannot have.
+ */
+function renameFlags(method: Method, flags: readonly Arg[]): Arg[] {
+	const given = method.extension(FLAGS_EXTENSION);
+
+	if (given === undefined) {
+		return [...flags];
+	}
+
+	const where = `The flags of "${commandWords(method)}" in generator/mapping.ts`;
+
+	if (
+		typeof given !== "object" ||
+		given === null ||
+		Array.isArray(given) ||
+		!Object.values(given).every(
+			name => typeof name === "string" && /^[a-z][a-z0-9-]*$/u.test(name),
+		)
+	) {
+		throw new TypeError(
+			`${where} must map field names to kebab-case flag names.`,
+		);
+	}
+
+	const names = given as Record<string, string>;
+	const missing = Object.keys(names).find(
+		wire => !flags.some(flag => flag.wire === wire),
+	);
+
+	if (missing !== undefined) {
+		throw new TypeError(
+			`${where} include "${missing}", which is not one of its flags.`,
+		);
+	}
+
+	const renamed = flags.map(flag =>
+		Object.hasOwn(names, flag.wire)
+			? { ...flag, name: names[flag.wire]! }
+			: flag,
+	);
+	const clash = Object.values(names).find(
+		name =>
+			RESERVED_FLAGS.includes(name) ||
+			renamed.filter(flag => flag.name === name).length > 1,
+	);
+
+	if (clash !== undefined) {
+		throw new TypeError(
+			`${where} include --${clash}, which another flag already uses.`,
+		);
+	}
+
+	return renamed;
+}
+
+/**
  * Returns a name that no global flag uses.
  * @param arg The argument.
  * @returns The argument, renamed if it clashed.
@@ -529,7 +589,7 @@ export function command(method: Method): Command {
 		if (location?.in === "path") {
 			pathArgs.push(fieldArg(field, "path", { positional: true }));
 		} else if (location?.in === "query") {
-			queryArgs.push(avoidReserved(fieldArg(field, "query")));
+			queryArgs.push(fieldArg(field, "query"));
 		}
 	}
 
@@ -541,7 +601,9 @@ export function command(method: Method): Command {
 	);
 
 	const body = bodyArgs(method.body);
-	const bodyFlags = body.args.map(avoidReserved);
+	const renamed = renameFlags(method, [...queryArgs, ...body.args]);
+	const queryFlags = renamed.slice(0, queryArgs.length).map(avoidReserved);
+	const bodyFlags = renamed.slice(queryArgs.length).map(avoidReserved);
 	const promoted = bodyFlags.filter(arg => arg.positional);
 	const flags = bodyFlags.filter(arg => !arg.positional);
 	const args: Arg[] = [...pathArgs, ...promoted];
@@ -559,7 +621,7 @@ export function command(method: Method): Command {
 		});
 	}
 
-	args.push(...queryArgs, ...flags);
+	args.push(...queryFlags, ...flags);
 
 	const summary =
 		method.summary !== ""

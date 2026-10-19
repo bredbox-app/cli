@@ -85,3 +85,15 @@ export const COLUMNS: Readonly<Record<string, readonly string[]>> = {
 		"last_used_at",
 	],
 };
+
+/**
+ * The flag of each query parameter or body field, by `operationId` and then
+ * by the field's name in the document, where the name the document gives
+ * it reads poorly on the command line. Flags are written in kebab-case. The
+ * generator checks each field against the document.
+ */
+export const FLAGS: Readonly<Record<string, Readonly<Record<string, string>>>> =
+	{
+		// The save is a save of the user's; "user" adds nothing.
+		post_AddCollectionItem: { user_save_id: "save-id" },
+	};

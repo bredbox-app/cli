@@ -15,7 +15,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { annotate, commandName, deriveName } from "../generator/annotate.ts";
-import { COLUMNS, CONFIRMATIONS } from "../generator/mapping.ts";
+import { COLUMNS, CONFIRMATIONS, FLAGS } from "../generator/mapping.ts";
 
 //-----------------------------------------------------------------------------
 // Helpers
@@ -24,7 +24,12 @@ import { COLUMNS, CONFIRMATIONS } from "../generator/mapping.ts";
 const ROOT = fileURLToPath(new URL("..", import.meta.url));
 const SAVED_SPEC = join(ROOT, "generator", "openapi.json");
 
-const NO_MAPPING = { operations: {}, confirmations: {}, columns: {} };
+const NO_MAPPING = {
+	operations: {},
+	confirmations: {},
+	columns: {},
+	flags: {},
+};
 
 /**
  * A small document whose operations the Forge extensions name.
@@ -234,6 +239,7 @@ describe("annotate()", () => {
 			operations: { post_WidgetsAdd: "widgets.create" },
 			confirmations: { delete_Widget: "This removes it with --hard." },
 			columns: {},
+			flags: {},
 		});
 
 		expect(warnings).toEqual([]);
@@ -250,6 +256,7 @@ describe("annotate()", () => {
 			operations: {},
 			confirmations: {},
 			columns: { post_WidgetsAdd: ["id", "part.name"] },
+			flags: {},
 		});
 
 		expect(warnings).toEqual([]);
@@ -269,11 +276,37 @@ describe("annotate()", () => {
 		);
 	});
 
+	it("should give operations the flags of the mapping", () => {
+		const { document, warnings } = annotate(WIDGETS, {
+			...NO_MAPPING,
+			flags: { post_WidgetsAdd: { part_name: "name" } },
+		});
+
+		expect(warnings).toEqual([]);
+		expect(document.paths!["/widgets"]!.post!["x-bredbox-flags"]).toEqual({
+			part_name: "name",
+		});
+		expect(
+			document.paths!["/widgets/{id}"]!.delete!["x-bredbox-flags"],
+		).toBeUndefined();
+	});
+
+	it("should give operations of the saved document the flags of the mapping", () => {
+		const { document } = annotate(savedSpec());
+
+		expect(
+			document.paths!["/collections/{collectionId}/items"]!.post![
+				"x-bredbox-flags"
+			],
+		).toEqual(FLAGS.post_AddCollectionItem);
+	});
+
 	it("should give a group the mapping moves the description it had in the document", () => {
 		const { document } = annotate(WIDGETS, {
 			operations: { post_WidgetsAdd: "parts.add" },
 			confirmations: {},
 			columns: {},
+			flags: {},
 		});
 
 		expect(document["x-forge-commands"]).toEqual({
@@ -290,6 +323,7 @@ describe("annotate()", () => {
 			},
 			confirmations: { delete_Gone: "Gone." },
 			columns: { get_Gone: ["id"] },
+			flags: { put_Gone: { gone_id: "id" } },
 		});
 
 		expect(warnings).toEqual([
@@ -297,6 +331,7 @@ describe("annotate()", () => {
 			"post_Gone is in OPERATIONS in generator/mapping.ts but not in the OpenAPI document.",
 			"delete_Gone is in CONFIRMATIONS in generator/mapping.ts but not in the OpenAPI document.",
 			"get_Gone is in COLUMNS in generator/mapping.ts but not in the OpenAPI document.",
+			"put_Gone is in FLAGS in generator/mapping.ts but not in the OpenAPI document.",
 		]);
 	});
 

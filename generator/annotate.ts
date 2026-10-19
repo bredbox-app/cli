@@ -15,7 +15,7 @@
 // Imports
 //-----------------------------------------------------------------------------
 
-import { COLUMNS, CONFIRMATIONS, OPERATIONS } from "./mapping.ts";
+import { COLUMNS, CONFIRMATIONS, FLAGS, OPERATIONS } from "./mapping.ts";
 
 //-----------------------------------------------------------------------------
 // Types
@@ -53,6 +53,9 @@ export interface Mapping {
 
 	/** The table columns of each list operation, by `operationId`. */
 	columns: Readonly<Record<string, readonly string[]>>;
+
+	/** The flag of each renamed field, by `operationId` and wire name. */
+	flags: Readonly<Record<string, Readonly<Record<string, string>>>>;
 }
 
 /**
@@ -82,6 +85,11 @@ const FORGE_COMMANDS = "x-forge-commands";
  * The extension that carries the columns of `COLUMNS` to the plugin.
  */
 export const COLUMNS_EXTENSION = "x-bredbox-columns";
+
+/**
+ * The extension that carries the flags of `FLAGS` to the plugin.
+ */
+export const FLAGS_EXTENSION = "x-bredbox-flags";
 
 const HTTP_METHODS = new Set([
 	"get",
@@ -265,9 +273,10 @@ export function annotate(
 		operations: OPERATIONS,
 		confirmations: CONFIRMATIONS,
 		columns: COLUMNS,
+		flags: FLAGS,
 	},
 ): AnnotateResult {
-	const { operations, confirmations, columns } = mapping;
+	const { operations, confirmations, columns, flags } = mapping;
 
 	if (typeof source !== "object" || source === null) {
 		throw new TypeError("Expected an OpenAPI document object.");
@@ -369,6 +378,10 @@ export function annotate(
 				operation[COLUMNS_EXTENSION] = [...columns[operationId]];
 			}
 
+			if (flags[operationId]) {
+				operation[FLAGS_EXTENSION] = { ...flags[operationId] };
+			}
+
 			for (let i = 1; i <= parts.length; i++) {
 				groupPaths.add(parts.slice(0, i).join("."));
 			}
@@ -387,6 +400,7 @@ export function annotate(
 		["OPERATIONS", Object.keys(operations)],
 		["CONFIRMATIONS", Object.keys(confirmations)],
 		["COLUMNS", Object.keys(columns)],
+		["FLAGS", Object.keys(flags)],
 	] as const) {
 		for (const operationId of ids) {
 			if (!operationIds.has(operationId)) {

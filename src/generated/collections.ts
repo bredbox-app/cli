@@ -161,7 +161,7 @@ export const collections: CommandGroup = {
 							positional: true,
 						},
 						{
-							name: "user-save-id",
+							name: "save-id",
 							wire: "user_save_id",
 							in: "body",
 							type: "string",

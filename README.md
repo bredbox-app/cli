@@ -46,7 +46,7 @@ bredbox saves add --url https://example.com/article --tags reading
 bredbox saves get <save-id>
 bredbox saves content <save-id> --format text
 bredbox saves tags add <save-id> one two
-bredbox collections items add <collection-id> --user-save-id <save-id>
+bredbox collections items add <collection-id> --save-id <save-id>
 bredbox tags rename old-name --name new-name
 bredbox me get
 ```
