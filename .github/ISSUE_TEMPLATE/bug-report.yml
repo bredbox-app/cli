@@ -1,0 +1,74 @@
+name: "🐞 Report a problem"
+description: "Report a bug in the Bredbox CLI"
+title: "Bug: (fill in)"
+labels:
+    - bug
+body:
+    - type: markdown
+      attributes:
+          value: |
+              Thanks for taking the time to report a problem. Please fill in as much as you can so we can reproduce it.
+
+              **Never include your access token.** Remove it from any commands, output or config files you paste below.
+    - type: input
+      attributes:
+          label: CLI version
+          description: The output of `bredbox --version`.
+          placeholder: e.g. 1.2.0
+      validations:
+          required: true
+    - type: input
+      attributes:
+          label: Node.js version
+          description: The output of `node --version`. The CLI requires Node.js 22.18 or later.
+          placeholder: e.g. v22.18.0
+      validations:
+          required: true
+    - type: dropdown
+      attributes:
+          label: Operating system
+          options:
+              - macOS
+              - Linux
+              - Windows
+              - Other
+      validations:
+          required: true
+    - type: dropdown
+      attributes:
+          label: How do you run the CLI?
+          options:
+              - Installed globally (`npm install -g @bredbox/cli`)
+              - With npx (`npx @bredbox/cli`)
+              - Other
+      validations:
+          required: true
+    - type: textarea
+      attributes:
+          label: Command
+          description: The exact command you ran.
+          placeholder: bredbox ...
+          render: shell
+      validations:
+          required: true
+    - type: textarea
+      attributes:
+          label: What did you expect to happen?
+      validations:
+          required: true
+    - type: textarea
+      attributes:
+          label: What actually happened?
+          description: Include the full output, any error message and the exit code (`echo $?` on macOS and Linux).
+      validations:
+          required: true
+    - type: textarea
+      attributes:
+          label: Additional context
+          description: Anything else that might help, such as whether you set `BREDBOX_API_URL` or `BREDBOX_CONFIG`, or whether the output was to a terminal or piped.
+    - type: checkboxes
+      attributes:
+          label: Participation
+          options:
+              - label: I am willing to submit a pull request for this issue.
+                required: false

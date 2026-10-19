@@ -1,0 +1,38 @@
+name: "🚀 Request a feature"
+description: "Suggest a new feature or a change to the bredbox CLI"
+title: "Feature: (fill in)"
+labels:
+    - enhancement
+body:
+    - type: markdown
+      attributes:
+          value: |
+              Thanks for suggesting an improvement. Most commands are generated from the Bredbox API's OpenAPI document, so a request for a new API operation may belong with the API rather than the CLI.
+    - type: textarea
+      attributes:
+          label: What problem do you want to solve?
+          description: Describe what you are trying to do and why the CLI makes it hard today.
+      validations:
+          required: true
+    - type: textarea
+      attributes:
+          label: What do you want to have happen?
+          description: Describe the feature, including example commands and the output you would expect.
+          placeholder: |
+              bredbox ...
+      validations:
+          required: true
+    - type: textarea
+      attributes:
+          label: What alternatives have you considered?
+          description: Workarounds you use today or other approaches you thought about.
+    - type: textarea
+      attributes:
+          label: Additional context
+          description: Anything else that might help, such as links to related issues or API documentation.
+    - type: checkboxes
+      attributes:
+          label: Participation
+          options:
+              - label: I am willing to submit a pull request to implement this change.
+                required: false
