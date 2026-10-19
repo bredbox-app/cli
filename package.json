@@ -1,7 +1,7 @@
 {
   "name": "@bredbox/cli",
   "version": "0.0.0",
-  "description": "Command line interface for the Bredbox API, generated from its OpenAPI document with Cloudflare Forge",
+  "description": "Command line interface for the Bredbox API",
   "type": "module",
   "bin": {
     "bredbox": "dist/bin.js"
@@ -13,7 +13,8 @@
     "node": ">=22.18"
   },
   "publishConfig": {
-    "access": "public"
+    "access": "public",
+    "provenance": true
   },
   "gitHooks": {
     "pre-commit": "lint-staged"
