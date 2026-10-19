@@ -9,7 +9,7 @@ import type { CommandGroup } from "../types.js";
 
 export const me: CommandGroup = {
 	name: "me",
-	description: "Your profile, settings, and account",
+	description: "Manage your account",
 	commands: [
 		{
 			name: "delete",
@@ -22,7 +22,7 @@ export const me: CommandGroup = {
 			body: "none",
 			response: "json",
 			confirmation:
-				"This requests the deletion of your Bredbox account and everything in it.",
+				"This starts deleting your account and all of its data. Bredbox emails you a confirmation link, and the deletion is permanent once confirmed.",
 		},
 		{
 			name: "get",
@@ -39,7 +39,7 @@ export const me: CommandGroup = {
 	groups: [
 		{
 			name: "data",
-			description: "Everything stored in your account",
+			description: "Manage your saved data",
 			commands: [
 				{
 					name: "delete",
@@ -52,19 +52,19 @@ export const me: CommandGroup = {
 					body: "none",
 					response: "json",
 					confirmation:
-						"This requests the deletion of every save, tag, collection, and highlight in your account.",
+						"This starts clearing all of your saved data. Bredbox emails you a confirmation link, and the data is permanently deleted once confirmed. Your account stays active.",
 				},
 			],
 			groups: [],
 		},
 		{
 			name: "emails",
-			description: "Email addresses tied to your account",
+			description: "Manage your email addresses",
 			commands: [],
 			groups: [
 				{
 					name: "inbound",
-					description: "The address that saves what is emailed to it",
+					description: "Manage your inbound email address",
 					commands: [
 						{
 							name: "create",
@@ -147,7 +147,7 @@ export const me: CommandGroup = {
 		},
 		{
 			name: "interests",
-			description: "The topics you are interested in",
+			description: "Manage your interests",
 			commands: [
 				{
 					name: "get",
@@ -188,7 +188,7 @@ export const me: CommandGroup = {
 		},
 		{
 			name: "jobs",
-			description: "Background jobs running for your account",
+			description: "Check background jobs",
 			commands: [
 				{
 					name: "get",
@@ -215,7 +215,7 @@ export const me: CommandGroup = {
 		},
 		{
 			name: "personalization",
-			description: "Whether recommendations are personalized",
+			description: "Manage your personalization setting",
 			commands: [
 				{
 					name: "get",
@@ -252,7 +252,7 @@ export const me: CommandGroup = {
 		},
 		{
 			name: "privacy",
-			description: "Privacy requests, such as deleting your data",
+			description: "Confirm privacy requests",
 			commands: [
 				{
 					name: "confirm",
@@ -273,6 +273,8 @@ export const me: CommandGroup = {
 					],
 					body: "object",
 					response: "json",
+					confirmation:
+						"This confirms a pending deletion request. The data it covers is permanently deleted.",
 				},
 			],
 			groups: [],

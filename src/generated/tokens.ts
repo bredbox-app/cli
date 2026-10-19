@@ -9,7 +9,7 @@ import type { CommandGroup } from "../types.js";
 
 export const tokens: CommandGroup = {
 	name: "tokens",
-	description: "API tokens for scripts and integrations",
+	description: "Manage your API tokens",
 	commands: [
 		{
 			name: "create",
@@ -68,7 +68,7 @@ export const tokens: CommandGroup = {
 			body: "none",
 			response: "none",
 			confirmation:
-				"This revokes the token; anything using it stops working.",
+				"This revokes the token immediately. Anything using it can no longer call the API.",
 		},
 		{
 			name: "get",
@@ -131,6 +131,8 @@ export const tokens: CommandGroup = {
 			],
 			body: "none",
 			response: "json",
+			confirmation:
+				"This invalidates the current token immediately. Anything using it stops working until it is given the new token.",
 		},
 		{
 			name: "scopes",
@@ -189,6 +191,8 @@ export const tokens: CommandGroup = {
 			],
 			body: "object",
 			response: "json",
+			confirmation:
+				"This regenerates the token, which invalidates the current one immediately. Anything using it stops working until it is given the new token.",
 		},
 	],
 	groups: [],

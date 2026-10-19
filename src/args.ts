@@ -98,6 +98,60 @@ export function parseGlobals(argv: readonly string[]): {
 }
 
 /**
+ * Returns how many arguments the global flag at `argv[index]` takes up:
+ * one for a boolean flag or `--flag=value`, two for a flag and its value,
+ * or zero if it is not a global flag.
+ * @param argv The arguments.
+ * @param index The index of the argument to look at.
+ * @returns The number of arguments the flag takes up.
+ */
+export function globalFlagLength(
+	argv: readonly string[],
+	index: number,
+): number {
+	const arg = argv[index];
+
+	if (arg === undefined) {
+		return 0;
+	}
+
+	const options = globalOptions();
+	let option: ParseArgsOptionsConfig[string] | undefined;
+	let inline = false;
+
+	if (arg.startsWith("--")) {
+		const equals = arg.indexOf("=");
+		const name = arg.slice(2, equals === -1 ? undefined : equals);
+
+		inline = equals !== -1;
+		option = Object.hasOwn(options, name) ? options[name] : undefined;
+
+		if (
+			!option &&
+			!inline &&
+			name.startsWith("no-") &&
+			options[name.slice(3)]?.type === "boolean"
+		) {
+			return 1;
+		}
+	} else if (/^-[^-]$/u.test(arg)) {
+		option = Object.values(options).find(
+			candidate => candidate.short === arg[1],
+		);
+	}
+
+	if (!option) {
+		return 0;
+	}
+
+	if (option.type === "boolean" || inline) {
+		return 1;
+	}
+
+	return index + 1 < argv.length ? 2 : 1;
+}
+
+/**
  * Parses the command line of `command`.
  * @param command The command.
  * @param argv The arguments after the words that named the command.

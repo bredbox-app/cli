@@ -11,7 +11,12 @@ import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { parseCommandLine, parseGlobals, readAtFile } from "./args.js";
+import {
+	globalFlagLength,
+	parseCommandLine,
+	parseGlobals,
+	readAtFile,
+} from "./args.js";
 import { UsageError } from "./errors.js";
 import type { Command } from "./types.js";
 
@@ -374,6 +379,42 @@ describe("parseGlobals()", () => {
 		expect(words).toEqual(["saves", "list"]);
 		expect(globals.token).toBe("t");
 		expect(globals.help).toBe(true);
+	});
+});
+
+describe("globalFlagLength()", () => {
+	it("should take up one argument for a boolean flag", () => {
+		expect(globalFlagLength(["--pretty", "x"], 0)).toBe(1);
+		expect(globalFlagLength(["-f", "x"], 0)).toBe(1);
+	});
+
+	it("should take up one argument for a negated boolean flag", () => {
+		expect(globalFlagLength(["--no-pretty", "x"], 0)).toBe(1);
+	});
+
+	it("should take up two arguments for a flag and its value", () => {
+		expect(globalFlagLength(["--token", "t", "x"], 0)).toBe(2);
+		expect(globalFlagLength(["x", "-o", "out.json"], 1)).toBe(2);
+	});
+
+	it("should take up one argument for a flag with an inline value", () => {
+		expect(globalFlagLength(["--token=t", "x"], 0)).toBe(1);
+	});
+
+	it("should take up one argument for a flag missing its value", () => {
+		expect(globalFlagLength(["--token"], 0)).toBe(1);
+	});
+
+	it("should take up nothing for a flag that is not global", () => {
+		expect(globalFlagLength(["--filter", "inbox"], 0)).toBe(0);
+		expect(globalFlagLength(["--no-token"], 0)).toBe(0);
+		expect(globalFlagLength(["--constructor"], 0)).toBe(0);
+		expect(globalFlagLength(["-x"], 0)).toBe(0);
+	});
+
+	it("should take up nothing for a word or past the end", () => {
+		expect(globalFlagLength(["saves"], 0)).toBe(0);
+		expect(globalFlagLength([], 0)).toBe(0);
 	});
 });
 

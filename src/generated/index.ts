@@ -9,7 +9,6 @@ import type { ApiInfo, CommandGroup } from "../types.js";
 import { authorizations } from "./authorizations.js";
 import { collections } from "./collections.js";
 import { exports } from "./exports.js";
-import { highlights } from "./highlights.js";
 import { imports } from "./imports.js";
 import { me } from "./me.js";
 import { saves } from "./saves.js";
@@ -27,7 +26,6 @@ export const groups: CommandGroup[] = [
 	authorizations,
 	collections,
 	exports,
-	highlights,
 	imports,
 	me,
 	saves,

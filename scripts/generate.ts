@@ -176,13 +176,17 @@ try {
 if (!values["skip-format"]) {
 	log("Formatting");
 	// The config is named so that an output directory outside the project,
-	// as the tests use, is formatted the same way.
+	// as the tests use, is formatted the same way. Only `.prettierignore`
+	// is read: the `tmp` entry of `.gitignore` would otherwise skip an
+	// output directory under `/tmp`.
 	node(packageScript("prettier", "bin/prettier.cjs"), [
 		"--write",
 		"--log-level",
 		"warn",
 		"--config",
 		join(ROOT, "prettier.config.js"),
+		"--ignore-path",
+		join(ROOT, ".prettierignore"),
 		outDir,
 	]);
 }

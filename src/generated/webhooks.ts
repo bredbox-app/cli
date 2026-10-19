@@ -9,7 +9,7 @@ import type { CommandGroup } from "../types.js";
 
 export const webhooks: CommandGroup = {
 	name: "webhooks",
-	description: "Webhooks that notify your services of events",
+	description: "Manage your webhooks",
 	commands: [
 		{
 			name: "create",
@@ -78,7 +78,8 @@ export const webhooks: CommandGroup = {
 			],
 			body: "none",
 			response: "json",
-			confirmation: "This will delete a webhook.",
+			confirmation:
+				"This deletes the webhook. Bredbox stops sending it events immediately.",
 		},
 		{
 			name: "events",

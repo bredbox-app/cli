@@ -11,7 +11,11 @@
 
 import { createRequire } from "node:module";
 import { createInterface } from "node:readline/promises";
-import { parseCommandLine, type GlobalFlags } from "./args.js";
+import {
+	globalFlagLength,
+	parseCommandLine,
+	type GlobalFlags,
+} from "./args.js";
 import { BredboxClient } from "./client.js";
 import {
 	configPath as defaultConfigPath,
@@ -94,7 +98,9 @@ export const version = VERSION;
 
 /**
  * Resolves the leading words of `argv` to a group or command of `groups`.
- * Words stop at the first flag, or at the first word that names a command.
+ * Global flags may come between the words, and are moved to the front of
+ * the arguments left over. Words stop at any other flag, or at the first
+ * word that names a command.
  * @param groups The top-level groups.
  * @param argv The arguments after the program name.
  * @returns What the words resolve to, and the arguments left over.
@@ -105,10 +111,23 @@ export function resolveCommand(
 	argv: readonly string[],
 ): Resolution {
 	const path: string[] = [];
+	const globals: string[] = [];
 	let group: CommandGroup | undefined;
 	let index = 0;
 
-	while (index < argv.length && !argv[index].startsWith("-")) {
+	while (index < argv.length) {
+		const flagLength = globalFlagLength(argv, index);
+
+		if (flagLength > 0) {
+			globals.push(...argv.slice(index, index + flagLength));
+			index += flagLength;
+			continue;
+		}
+
+		if (argv[index].startsWith("-")) {
+			break;
+		}
+
 		const word = argv[index];
 		const candidates = group ? group.groups : groups;
 		const subgroup = candidates.find(candidate => candidate.name === word);
@@ -130,7 +149,7 @@ export function resolveCommand(
 				kind: "command",
 				command,
 				path,
-				rest: argv.slice(index + 1),
+				rest: [...globals, ...argv.slice(index + 1)],
 			};
 		}
 
@@ -144,7 +163,7 @@ export function resolveCommand(
 		throw new UsageError(`Unknown command "${word}".`);
 	}
 
-	const rest = argv.slice(index);
+	const rest = [...globals, ...argv.slice(index)];
 
 	return group
 		? { kind: "group", group, path, rest }

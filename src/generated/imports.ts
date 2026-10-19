@@ -9,7 +9,7 @@ import type { CommandGroup } from "../types.js";
 
 export const imports: CommandGroup = {
 	name: "imports",
-	description: "Imports of saves from other services",
+	description: "Import saves from other services",
 	commands: [
 		{
 			name: "create",

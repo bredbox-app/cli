@@ -42,7 +42,7 @@ Commands follow the shape of the API: a group, sometimes a subgroup, then an ope
 
 ```shell
 bredbox saves list --filter inbox --type article
-bredbox saves create --url https://example.com/article --tags reading
+bredbox saves add --url https://example.com/article --tags reading
 bredbox saves get <save-id>
 bredbox saves content <save-id> --format text
 bredbox saves tags add <save-id> one two

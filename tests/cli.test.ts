@@ -203,17 +203,39 @@ describe("generated commands", () => {
 		}
 	});
 
-	it("should ask confirmation for every DELETE and nothing else", () => {
+	it("should ask confirmation for every DELETE and the destructive commands that are not", () => {
+		const destructive = new Set([
+			"me privacy confirm",
+			"tokens regenerate",
+			"tokens update",
+		]);
+
 		for (const { words, command } of allCommands(groups)) {
+			const name = words.join(" ");
+
 			expect(
 				command.confirmation !== undefined,
-				`${words.join(" ")} (${command.method})`,
-			).toBe(command.method === "DELETE");
+				`${name} (${command.method})`,
+			).toBe(command.method === "DELETE" || destructive.has(name));
+		}
+	});
+
+	it("should keep command names fit for the command line", () => {
+		expect(find("saves", "content").path).toBe("/saves/{saveId}/content");
+		expect(find("saves", "add").path).toBe("/saves");
+		expect(find("saves", "get-by-url").path).toBe("/saves/by-url");
+		expect(find("tags", "saves").path).toBe("/tags/{tagName}");
+		expect(find("tags", "usage").path).toBe("/tags/{tagName}/usage");
+		expect(find("tokens", "scopes").path).toBe("/tokens/scopes");
+		expect(find("webhooks", "events").path).toBe("/webhooks/events");
+
+		for (const { words } of allCommands(groups)) {
+			expect(words.at(-1)).not.toMatch(/^(?:get|list)-(?!by-)/u);
 		}
 	});
 
 	it("should put path parameters first as positionals, in path order", () => {
-		const update = find("highlights", "update");
+		const update = find("saves", "highlights", "update");
 
 		expect(update.args.slice(0, 2)).toMatchObject([
 			{ name: "save-id", in: "path", positional: true },
@@ -269,7 +291,7 @@ describe("bredbox saves list", () => {
 	});
 });
 
-describe("bredbox saves create", () => {
+describe("bredbox saves add", () => {
 	it("should send body flags as JSON", async () => {
 		const { io } = fakeIo();
 		const { fetch, calls } = fakeFetch(() => json(201, { id: "new" }));
@@ -277,7 +299,7 @@ describe("bredbox saves create", () => {
 		await run(
 			[
 				"saves",
-				"create",
+				"add",
 				"--url",
 				"https://example.com/a",
 				"--tags",

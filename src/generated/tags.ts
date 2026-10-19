@@ -9,7 +9,7 @@ import type { CommandGroup } from "../types.js";
 
 export const tags: CommandGroup = {
 	name: "tags",
-	description: "Tags across all of your saves",
+	description: "Manage tags across all of your saves",
 	commands: [
 		{
 			name: "delete",
@@ -29,7 +29,7 @@ export const tags: CommandGroup = {
 			body: "none",
 			response: "json",
 			confirmation:
-				"This removes the tag from every save that carries it.",
+				"This removes the tag from every one of your saves. The saves themselves are not deleted.",
 		},
 		{
 			name: "list",

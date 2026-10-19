@@ -146,10 +146,52 @@ describe("resolveCommand()", () => {
 		expect(resolveCommand(groups, [])).toEqual({ kind: "root", rest: [] });
 	});
 
-	it("should stop at the first flag", () => {
-		expect(resolveCommand(groups, ["--help", "things"])).toEqual({
+	it("should stop at the first flag that is not global", () => {
+		expect(resolveCommand(groups, ["--thing", "things"])).toEqual({
 			kind: "root",
-			rest: ["--help", "things"],
+			rest: ["--thing", "things"],
+		});
+	});
+
+	it("should move global flags before the words to the rest", () => {
+		expect(resolveCommand(groups, ["--help", "things"])).toEqual({
+			kind: "group",
+			group: groups[0],
+			path: ["things"],
+			rest: ["--help"],
+		});
+	});
+
+	it("should move global flags between the words to the rest", () => {
+		const resolution = resolveCommand(groups, [
+			"--token",
+			"t",
+			"things",
+			"--api-url=https://api.test",
+			"-f",
+			"delete",
+			"abc",
+			"--pretty",
+		]);
+
+		expect(resolution).toMatchObject({
+			kind: "command",
+			path: ["things", "delete"],
+			rest: [
+				"--token",
+				"t",
+				"--api-url=https://api.test",
+				"-f",
+				"abc",
+				"--pretty",
+			],
+		});
+	});
+
+	it("should keep global flags with no command in the rest", () => {
+		expect(resolveCommand(groups, ["--token", "t", "--version"])).toEqual({
+			kind: "root",
+			rest: ["--token", "t", "--version"],
 		});
 	});
 
@@ -312,6 +354,30 @@ describe("run()", () => {
 			(calls[0].init.headers as Record<string, string>).Authorization,
 		).toBe("Bearer secret");
 		expect(out).toEqual(['{"id":"1"}\n']);
+	});
+
+	it("should read global flags given before the command", async () => {
+		const { io } = fakeIo();
+		const { fetch, calls } = jsonFetch(200, {});
+
+		expect(
+			await run(
+				[
+					"--token",
+					"secret",
+					"--api-url",
+					"https://api.test",
+					"things",
+					"get",
+					"1",
+				],
+				{ io, groups, env, configPath, fetch },
+			),
+		).toBe(0);
+		expect(calls[0].url).toBe("https://api.test/things/1");
+		expect(
+			(calls[0].init.headers as Record<string, string>).Authorization,
+		).toBe("Bearer secret");
 	});
 
 	it("should take the token from a flag over the environment", async () => {

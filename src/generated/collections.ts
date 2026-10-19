@@ -9,7 +9,7 @@ import type { CommandGroup } from "../types.js";
 
 export const collections: CommandGroup = {
 	name: "collections",
-	description: "Collections of saves",
+	description: "Manage your collections",
 	commands: [
 		{
 			name: "create",
@@ -52,7 +52,8 @@ export const collections: CommandGroup = {
 			],
 			body: "none",
 			response: "none",
-			confirmation: "This will delete a collection.",
+			confirmation:
+				"This permanently deletes the collection and the notes on its items. The saves in it are not deleted.",
 		},
 		{
 			name: "get",
@@ -142,7 +143,7 @@ export const collections: CommandGroup = {
 	groups: [
 		{
 			name: "items",
-			description: "The saves in a collection",
+			description: "Manage the saves in a collection",
 			commands: [
 				{
 					name: "add",
@@ -245,7 +246,8 @@ export const collections: CommandGroup = {
 					],
 					body: "none",
 					response: "none",
-					confirmation: "This will remove a save from a collection.",
+					confirmation:
+						"This removes the save from the collection and deletes its note. The save itself is not deleted.",
 				},
 				{
 					name: "update",

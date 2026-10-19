@@ -9,7 +9,7 @@ import type { CommandGroup } from "../types.js";
 
 export const authorizations: CommandGroup = {
 	name: "authorizations",
-	description: "Applications connected to your account",
+	description: "Manage the applications connected to your account",
 	commands: [
 		{
 			name: "delete",
@@ -28,7 +28,8 @@ export const authorizations: CommandGroup = {
 			],
 			body: "none",
 			response: "none",
-			confirmation: "This disconnects the application from your account.",
+			confirmation:
+				"This disconnects the application and revokes its access immediately. It must be authorized again to use your account.",
 		},
 		{
 			name: "list",

@@ -11,6 +11,79 @@
 			"description": "Production server"
 		}
 	],
+	"x-forge-commands": {
+		"saves": {
+			"description": "Manage your saves.",
+			"groups": {
+				"progress": {
+					"description": "Manage reading progress for a save."
+				},
+				"listening": {
+					"description": "Manage listening progress for a save."
+				},
+				"highlights": {
+					"description": "Manage highlights in a save."
+				},
+				"tags": {
+					"description": "Manage the tags on a save."
+				}
+			}
+		},
+		"tags": {
+			"description": "Manage tags across all of your saves."
+		},
+		"collections": {
+			"description": "Manage your collections.",
+			"groups": {
+				"items": {
+					"description": "Manage the saves in a collection."
+				}
+			}
+		},
+		"imports": {
+			"description": "Import saves from other services."
+		},
+		"exports": {
+			"description": "Export your saves."
+		},
+		"me": {
+			"description": "Manage your account.",
+			"groups": {
+				"interests": {
+					"description": "Manage your interests."
+				},
+				"personalization": {
+					"description": "Manage your personalization setting."
+				},
+				"data": {
+					"description": "Manage your saved data."
+				},
+				"privacy": {
+					"description": "Confirm privacy requests."
+				},
+				"jobs": {
+					"description": "Check background jobs."
+				},
+				"emails": {
+					"description": "Manage your email addresses.",
+					"groups": {
+						"inbound": {
+							"description": "Manage your inbound email address."
+						}
+					}
+				}
+			}
+		},
+		"tokens": {
+			"description": "Manage your API tokens."
+		},
+		"webhooks": {
+			"description": "Manage your webhooks."
+		},
+		"authorizations": {
+			"description": "Manage the applications connected to your account."
+		}
+	},
 	"components": {
 		"schemas": {},
 		"parameters": {}
@@ -22,6 +95,8 @@
 					"Saves"
 				],
 				"summary": "List user saves with filtering and pagination",
+				"x-fern-sdk-group-name": "saves",
+				"x-fern-sdk-method-name": "list",
 				"operationId": "get_SavesList",
 				"parameters": [
 					{
@@ -366,6 +441,8 @@
 					"Saves"
 				],
 				"summary": "Create a new user save",
+				"x-fern-sdk-group-name": "saves",
+				"x-fern-sdk-method-name": "add",
 				"operationId": "post_SavesCreate",
 				"requestBody": {
 					"content": {
@@ -860,6 +937,8 @@
 					"Saves"
 				],
 				"summary": "Search user saves with hybrid full-text and semantic search",
+				"x-fern-sdk-group-name": "saves",
+				"x-fern-sdk-method-name": "search",
 				"operationId": "get_SavesSearch",
 				"parameters": [
 					{
@@ -1235,6 +1314,8 @@
 					"Saves"
 				],
 				"summary": "Check whether a URL is already saved",
+				"x-fern-sdk-group-name": "saves",
+				"x-fern-sdk-method-name": "status",
 				"operationId": "get_SavesStatus",
 				"parameters": [
 					{
@@ -1380,6 +1461,8 @@
 					"Saves"
 				],
 				"summary": "Get a single user save by URL",
+				"x-fern-sdk-group-name": "saves",
+				"x-fern-sdk-method-name": "getByUrl",
 				"operationId": "get_SavesByUrl",
 				"parameters": [
 					{
@@ -1681,6 +1764,8 @@
 					"Saves"
 				],
 				"summary": "Get a single user save by ID",
+				"x-fern-sdk-group-name": "saves",
+				"x-fern-sdk-method-name": "get",
 				"operationId": "get_SavesGet",
 				"parameters": [
 					{
@@ -1933,6 +2018,8 @@
 					"Saves"
 				],
 				"summary": "Update a single user save by ID",
+				"x-fern-sdk-group-name": "saves",
+				"x-fern-sdk-method-name": "update",
 				"operationId": "patch_SavesUpdate",
 				"parameters": [
 					{
@@ -2256,6 +2343,9 @@
 					"Saves"
 				],
 				"summary": "Delete a single user save by ID",
+				"x-fern-sdk-group-name": "saves",
+				"x-fern-sdk-method-name": "delete",
+				"x-forge-require-confirmation": "This moves the save to Trash. With permanent set to true, it permanently deletes a save that is already in Trash.",
 				"operationId": "delete_SavesDelete",
 				"parameters": [
 					{
@@ -2378,6 +2468,8 @@
 					"Saves"
 				],
 				"summary": "Get content for a save",
+				"x-fern-sdk-group-name": "saves",
+				"x-fern-sdk-method-name": "getContent",
 				"description": "Retrieves the content for a given save. Use the `format` query param to filter by content type, retrieve extracted text, download the file retained for a PDF or office document save (`original`), or download the PDF an office document was converted to (`converted`).",
 				"operationId": "get_SavesContent",
 				"parameters": [
@@ -2516,6 +2608,11 @@
 					"Reading Progress"
 				],
 				"summary": "Get reading progress for a specific save",
+				"x-fern-sdk-group-name": [
+					"saves",
+					"progress"
+				],
+				"x-fern-sdk-method-name": "get",
 				"operationId": "get_ReadingProgressGet",
 				"parameters": [
 					{
@@ -2713,6 +2810,11 @@
 					"Reading Progress"
 				],
 				"summary": "Create or update reading progress for a save",
+				"x-fern-sdk-group-name": [
+					"saves",
+					"progress"
+				],
+				"x-fern-sdk-method-name": "set",
 				"operationId": "put_ReadingProgressPut",
 				"parameters": [
 					{
@@ -3075,6 +3177,11 @@
 					"Listening Progress"
 				],
 				"summary": "Get listening progress for a specific save",
+				"x-fern-sdk-group-name": [
+					"saves",
+					"listening"
+				],
+				"x-fern-sdk-method-name": "get",
 				"operationId": "get_ListeningProgressGet",
 				"parameters": [
 					{
@@ -3257,6 +3364,11 @@
 					"Listening Progress"
 				],
 				"summary": "Create or update listening progress for a save",
+				"x-fern-sdk-group-name": [
+					"saves",
+					"listening"
+				],
+				"x-fern-sdk-method-name": "set",
 				"operationId": "put_ListeningProgressPut",
 				"parameters": [
 					{
@@ -3526,6 +3638,8 @@
 					"Saves"
 				],
 				"summary": "Restore a trashed save to Inbox",
+				"x-fern-sdk-group-name": "saves",
+				"x-fern-sdk-method-name": "restore",
 				"operationId": "post_SavesRestore",
 				"parameters": [
 					{
@@ -3806,6 +3920,11 @@
 					"Highlights"
 				],
 				"summary": "List highlights for a specific save",
+				"x-fern-sdk-group-name": [
+					"saves",
+					"highlights"
+				],
+				"x-fern-sdk-method-name": "list",
 				"operationId": "get_HighlightsList",
 				"parameters": [
 					{
@@ -3973,6 +4092,11 @@
 					"Highlights"
 				],
 				"summary": "Create a new highlight for a save",
+				"x-fern-sdk-group-name": [
+					"saves",
+					"highlights"
+				],
+				"x-fern-sdk-method-name": "create",
 				"operationId": "post_HighlightsCreate",
 				"parameters": [
 					{
@@ -4257,6 +4381,11 @@
 					"Highlights"
 				],
 				"summary": "Update a highlight location",
+				"x-fern-sdk-group-name": [
+					"saves",
+					"highlights"
+				],
+				"x-fern-sdk-method-name": "update",
 				"operationId": "patch_HighlightsUpdate",
 				"parameters": [
 					{
@@ -4534,6 +4663,12 @@
 					"Highlights"
 				],
 				"summary": "Delete a highlight",
+				"x-fern-sdk-group-name": [
+					"saves",
+					"highlights"
+				],
+				"x-fern-sdk-method-name": "delete",
+				"x-forge-require-confirmation": "This permanently deletes the highlight.",
 				"operationId": "delete_HighlightsDelete",
 				"parameters": [
 					{
@@ -4682,6 +4817,11 @@
 					"Saves"
 				],
 				"summary": "Get all tags for a specific save by ID",
+				"x-fern-sdk-group-name": [
+					"saves",
+					"tags"
+				],
+				"x-fern-sdk-method-name": "list",
 				"operationId": "get_SaveTagsList",
 				"parameters": [
 					{
@@ -4781,6 +4921,11 @@
 					"Saves"
 				],
 				"summary": "Add tags to a specific save by ID",
+				"x-fern-sdk-group-name": [
+					"saves",
+					"tags"
+				],
+				"x-fern-sdk-method-name": "add",
 				"operationId": "post_SaveTagsAdd",
 				"parameters": [
 					{
@@ -4920,6 +5065,11 @@
 					"Saves"
 				],
 				"summary": "Set all tags for a specific save by ID",
+				"x-fern-sdk-group-name": [
+					"saves",
+					"tags"
+				],
+				"x-fern-sdk-method-name": "set",
 				"operationId": "put_SaveTagsSet",
 				"parameters": [
 					{
@@ -5069,6 +5219,8 @@
 					"Imports"
 				],
 				"summary": "List user imports with pagination",
+				"x-fern-sdk-group-name": "imports",
+				"x-fern-sdk-method-name": "list",
 				"description": "Returns the authenticated user's imports ordered by creation date.",
 				"operationId": "get_ImportsList",
 				"parameters": [
@@ -5273,6 +5425,8 @@
 					"Imports"
 				],
 				"summary": "Create a new import",
+				"x-fern-sdk-group-name": "imports",
+				"x-fern-sdk-method-name": "create",
 				"description": "Upload an import file and start the import process",
 				"operationId": "post_ImportsCreate",
 				"requestBody": {
@@ -5449,6 +5603,8 @@
 					"Exports"
 				],
 				"summary": "Create a new data export",
+				"x-fern-sdk-group-name": "exports",
+				"x-fern-sdk-method-name": "create",
 				"description": "Initiate a data export in the chosen format: pocket_zip (saves, collections, tags, article content, and highlights) or bookmarks_html (a browser bookmarks document of active saves). Rate limited to one export per 24 hours, shared across formats.",
 				"operationId": "post_ExportsCreate",
 				"requestBody": {
@@ -5599,6 +5755,8 @@
 					"Exports"
 				],
 				"summary": "List user exports with pagination",
+				"x-fern-sdk-group-name": "exports",
+				"x-fern-sdk-method-name": "list",
 				"description": "Returns the authenticated user's exports ordered by creation date. Includes download links for ready exports.",
 				"operationId": "get_ExportsList",
 				"parameters": [
@@ -5795,6 +5953,8 @@
 					"Exports"
 				],
 				"summary": "Download a user export archive",
+				"x-fern-sdk-group-name": "exports",
+				"x-fern-sdk-method-name": "download",
 				"description": "Download a ready export as a ZIP file. Requires authentication and ownership of the export.",
 				"operationId": "get_ExportsDownload",
 				"parameters": [
@@ -5936,6 +6096,8 @@
 					"Tags"
 				],
 				"summary": "List all tags for the authenticated user",
+				"x-fern-sdk-group-name": "tags",
+				"x-fern-sdk-method-name": "list",
 				"operationId": "get_TagsList",
 				"parameters": [
 					{
@@ -6064,6 +6226,8 @@
 					"Tags"
 				],
 				"summary": "List saves for a specific tag",
+				"x-fern-sdk-group-name": "tags",
+				"x-fern-sdk-method-name": "listSaves",
 				"operationId": "get_TagSaves",
 				"parameters": [
 					{
@@ -6375,6 +6539,8 @@
 					"Tags"
 				],
 				"summary": "Rename a tag across all of your saves",
+				"x-fern-sdk-group-name": "tags",
+				"x-fern-sdk-method-name": "rename",
 				"operationId": "patch_TagRename",
 				"parameters": [
 					{
@@ -6625,6 +6791,9 @@
 					"Tags"
 				],
 				"summary": "Remove a tag from all of your saves",
+				"x-fern-sdk-group-name": "tags",
+				"x-fern-sdk-method-name": "delete",
+				"x-forge-require-confirmation": "This removes the tag from every one of your saves. The saves themselves are not deleted.",
 				"operationId": "delete_TagDelete",
 				"parameters": [
 					{
@@ -6802,6 +6971,8 @@
 					"Tags"
 				],
 				"summary": "Count the saves carrying a tag",
+				"x-fern-sdk-group-name": "tags",
+				"x-fern-sdk-method-name": "getUsage",
 				"operationId": "get_TagUsage",
 				"parameters": [
 					{
@@ -6987,6 +7158,8 @@
 					"Collections"
 				],
 				"summary": "List user collections with pagination and optional membership check",
+				"x-fern-sdk-group-name": "collections",
+				"x-fern-sdk-method-name": "list",
 				"operationId": "get_CollectionsList",
 				"parameters": [
 					{
@@ -7206,6 +7379,8 @@
 					"Collections"
 				],
 				"summary": "Create a new collection",
+				"x-fern-sdk-group-name": "collections",
+				"x-fern-sdk-method-name": "create",
 				"operationId": "post_CollectionsCreate",
 				"requestBody": {
 					"content": {
@@ -7345,6 +7520,8 @@
 					"Collections"
 				],
 				"summary": "Get a single collection owned by the current user",
+				"x-fern-sdk-group-name": "collections",
+				"x-fern-sdk-method-name": "get",
 				"operationId": "get_CollectionsGet",
 				"parameters": [
 					{
@@ -7492,6 +7669,8 @@
 					"Collections"
 				],
 				"summary": "Update a collection",
+				"x-fern-sdk-group-name": "collections",
+				"x-fern-sdk-method-name": "update",
 				"operationId": "patch_CollectionsUpdate",
 				"parameters": [
 					{
@@ -7684,6 +7863,9 @@
 					"Collections"
 				],
 				"summary": "Delete a collection",
+				"x-fern-sdk-group-name": "collections",
+				"x-fern-sdk-method-name": "delete",
+				"x-forge-require-confirmation": "This permanently deletes the collection and the notes on its items. The saves in it are not deleted.",
 				"operationId": "delete_CollectionsDelete",
 				"parameters": [
 					{
@@ -7797,6 +7979,11 @@
 					"Collections"
 				],
 				"summary": "List items in a collection",
+				"x-fern-sdk-group-name": [
+					"collections",
+					"items"
+				],
+				"x-fern-sdk-method-name": "list",
 				"operationId": "get_CollectionItemsList",
 				"parameters": [
 					{
@@ -8106,6 +8293,11 @@
 					"Collections"
 				],
 				"summary": "Add a save to a collection",
+				"x-fern-sdk-group-name": [
+					"collections",
+					"items"
+				],
+				"x-fern-sdk-method-name": "add",
 				"operationId": "post_AddCollectionItem",
 				"parameters": [
 					{
@@ -8306,6 +8498,11 @@
 					"Collections"
 				],
 				"summary": "Get a single collection item",
+				"x-fern-sdk-group-name": [
+					"collections",
+					"items"
+				],
+				"x-fern-sdk-method-name": "get",
 				"operationId": "get_GetCollectionItem",
 				"parameters": [
 					{
@@ -8613,6 +8810,11 @@
 					"Collections"
 				],
 				"summary": "Update a collection item (reorder and/or set note)",
+				"x-fern-sdk-group-name": [
+					"collections",
+					"items"
+				],
+				"x-fern-sdk-method-name": "update",
 				"operationId": "patch_UpdateCollectionItem",
 				"parameters": [
 					{
@@ -8967,6 +9169,12 @@
 					"Collections"
 				],
 				"summary": "Remove a save from a collection",
+				"x-fern-sdk-group-name": [
+					"collections",
+					"items"
+				],
+				"x-fern-sdk-method-name": "remove",
+				"x-forge-require-confirmation": "This removes the save from the collection and deletes its note. The save itself is not deleted.",
 				"operationId": "delete_DeleteCollectionItem",
 				"parameters": [
 					{
@@ -9089,6 +9297,8 @@
 					"Me"
 				],
 				"summary": "Get current user profile",
+				"x-fern-sdk-group-name": "me",
+				"x-fern-sdk-method-name": "get",
 				"description": "Returns account profile fields for the authenticated user. Requires the `user:read` scope and the `read` entitlement.",
 				"operationId": "get_MeGet",
 				"responses": {
@@ -9229,6 +9439,9 @@
 					"Me"
 				],
 				"summary": "Delete user account",
+				"x-fern-sdk-group-name": "me",
+				"x-fern-sdk-method-name": "delete",
+				"x-forge-require-confirmation": "This starts deleting your account and all of its data. Bredbox emails you a confirmation link, and the deletion is permanent once confirmed.",
 				"description": "Requests an email confirmation before deleting the user's account and all associated data. Requires the `user:delete` scope. This action is permanent once confirmed.",
 				"operationId": "delete_MeDelete",
 				"responses": {
@@ -9412,6 +9625,11 @@
 					"Me"
 				],
 				"summary": "Get current user interests",
+				"x-fern-sdk-group-name": [
+					"me",
+					"interests"
+				],
+				"x-fern-sdk-method-name": "get",
 				"description": "Returns the authenticated user's selected topic interest slugs. Requires the `user:read` scope and the `read` entitlement.",
 				"operationId": "get_MeInterestsGet",
 				"responses": {
@@ -9504,6 +9722,11 @@
 					"Me"
 				],
 				"summary": "Set current user interests",
+				"x-fern-sdk-group-name": [
+					"me",
+					"interests"
+				],
+				"x-fern-sdk-method-name": "set",
 				"description": "Replaces the authenticated user's selected topic interests. Input is normalized to lowercase and de-duplicated before persistence. Requires the `user:write` scope and the `write` entitlement.",
 				"operationId": "put_MeInterestsPut",
 				"requestBody": {
@@ -9657,6 +9880,11 @@
 					"Me"
 				],
 				"summary": "Get current user personalization setting",
+				"x-fern-sdk-group-name": [
+					"me",
+					"personalization"
+				],
+				"x-fern-sdk-method-name": "get",
 				"description": "Returns whether Bredbox may generate personalized recommendations for the authenticated user. Requires the `user:read` scope and the `read` entitlement.",
 				"operationId": "get_MePersonalizationGet",
 				"responses": {
@@ -9754,6 +9982,11 @@
 					"Me"
 				],
 				"summary": "Set current user personalization setting",
+				"x-fern-sdk-group-name": [
+					"me",
+					"personalization"
+				],
+				"x-fern-sdk-method-name": "set",
 				"description": "Turns personalized recommendations on or off for the authenticated user. Selected topics and hidden recommendations are retained either way. Requires the `user:write` scope and the `read` entitlement.",
 				"operationId": "put_MePersonalizationPut",
 				"requestBody": {
@@ -9917,6 +10150,12 @@
 					"Me"
 				],
 				"summary": "Clear all user data",
+				"x-fern-sdk-group-name": [
+					"me",
+					"data"
+				],
+				"x-fern-sdk-method-name": "delete",
+				"x-forge-require-confirmation": "This starts clearing all of your saved data. Bredbox emails you a confirmation link, and the data is permanently deleted once confirmed. Your account stays active.",
 				"description": "Requests an email confirmation before clearing all user saved data. The account remains active after confirmation.",
 				"operationId": "delete_MeDataDelete",
 				"responses": {
@@ -10100,6 +10339,12 @@
 					"Me"
 				],
 				"summary": "Confirm a privacy deletion request",
+				"x-fern-sdk-group-name": [
+					"me",
+					"privacy"
+				],
+				"x-fern-sdk-method-name": "confirm",
+				"x-forge-require-confirmation": "This confirms a pending deletion request. The data it covers is permanently deleted.",
 				"description": "Confirms a pending privacy request using the raw email token, promotes the job to pending, and enqueues background processing.",
 				"operationId": "post_MePrivacyConfirm",
 				"requestBody": {
@@ -10329,6 +10574,11 @@
 					"Me"
 				],
 				"summary": "Get background job status",
+				"x-fern-sdk-group-name": [
+					"me",
+					"jobs"
+				],
+				"x-fern-sdk-method-name": "get",
 				"description": "Retrieves the current status of a background job initiated by the user (e.g., account deletion, data clearance).",
 				"operationId": "get_MeJobStatus",
 				"parameters": [
@@ -10473,6 +10723,12 @@
 					"Me"
 				],
 				"summary": "Get the current user's inbound email address",
+				"x-fern-sdk-group-name": [
+					"me",
+					"emails",
+					"inbound"
+				],
+				"x-fern-sdk-method-name": "get",
 				"description": "Returns the authenticated user's active inbound email capture address for a purpose, or 404 when none has been generated. Never creates one — use `POST` to generate. Requires the `user:write` scope and the `read` entitlement.",
 				"operationId": "get_EmailInboundShow",
 				"parameters": [
@@ -10620,6 +10876,12 @@
 					"Me"
 				],
 				"summary": "Generate the current user's inbound email address",
+				"x-fern-sdk-group-name": [
+					"me",
+					"emails",
+					"inbound"
+				],
+				"x-fern-sdk-method-name": "create",
 				"description": "Generates an inbound email capture address for the authenticated user, or returns the existing one. Responds 201 when an address was created and 200 when one already existed. Requires the `user:write` scope and the `write` entitlement, so a read-only account is refused.",
 				"operationId": "post_EmailInboundCreate",
 				"parameters": [
@@ -10775,6 +11037,12 @@
 					"Me"
 				],
 				"summary": "Update the current user's inbound email address status",
+				"x-fern-sdk-group-name": [
+					"me",
+					"emails",
+					"inbound"
+				],
+				"x-fern-sdk-method-name": "update",
 				"description": "Updates the status of the authenticated user's inbound email capture address between active and disabled. Requires the `user:write` scope and the `write` entitlement, so a read-only account is refused.",
 				"operationId": "patch_EmailInboundUpdate",
 				"parameters": [
@@ -10967,6 +11235,8 @@
 					"Tokens"
 				],
 				"summary": "List API tokens",
+				"x-fern-sdk-group-name": "tokens",
+				"x-fern-sdk-method-name": "list",
 				"operationId": "get_TokensList",
 				"parameters": [
 					{
@@ -11147,6 +11417,8 @@
 					"Tokens"
 				],
 				"summary": "Create a new API token",
+				"x-fern-sdk-group-name": "tokens",
+				"x-fern-sdk-method-name": "create",
 				"operationId": "post_TokensCreate",
 				"requestBody": {
 					"content": {
@@ -11304,6 +11576,8 @@
 					"Tokens"
 				],
 				"summary": "List available API token scopes",
+				"x-fern-sdk-group-name": "tokens",
+				"x-fern-sdk-method-name": "listScopes",
 				"description": "Returns the canonical scope catalog for v2 endpoints, including separate `:write` and `:delete` scopes where applicable. There is no `/v2/webhooks/scopes` endpoint.",
 				"operationId": "get_TokensScopes",
 				"responses": {
@@ -11367,6 +11641,8 @@
 					"Tokens"
 				],
 				"summary": "Get an API token by ID",
+				"x-fern-sdk-group-name": "tokens",
+				"x-fern-sdk-method-name": "get",
 				"operationId": "get_TokensGet",
 				"parameters": [
 					{
@@ -11519,6 +11795,9 @@
 					"Tokens"
 				],
 				"summary": "Update and regenerate an API token",
+				"x-fern-sdk-group-name": "tokens",
+				"x-fern-sdk-method-name": "update",
+				"x-forge-require-confirmation": "This regenerates the token, which invalidates the current one immediately. Anything using it stops working until it is given the new token.",
 				"operationId": "patch_TokensUpdate",
 				"parameters": [
 					{
@@ -11703,6 +11982,9 @@
 					"Tokens"
 				],
 				"summary": "Revoke an API token",
+				"x-fern-sdk-group-name": "tokens",
+				"x-fern-sdk-method-name": "delete",
+				"x-forge-require-confirmation": "This revokes the token immediately. Anything using it can no longer call the API.",
 				"operationId": "delete_TokensDelete",
 				"parameters": [
 					{
@@ -11794,6 +12076,9 @@
 					"Tokens"
 				],
 				"summary": "Regenerate an API token",
+				"x-fern-sdk-group-name": "tokens",
+				"x-fern-sdk-method-name": "regenerate",
+				"x-forge-require-confirmation": "This invalidates the current token immediately. Anything using it stops working until it is given the new token.",
 				"operationId": "post_TokensRegenerate",
 				"parameters": [
 					{
@@ -11927,6 +12212,8 @@
 					"Webhooks"
 				],
 				"summary": "List available webhook event types",
+				"x-fern-sdk-group-name": "webhooks",
+				"x-fern-sdk-method-name": "listEvents",
 				"description": "Returns the stable v1 webhook event catalog used for outbound deliveries. Requires `webhooks:read` scope and the `developer` entitlement.",
 				"operationId": "get_WebhooksEvents",
 				"responses": {
@@ -12024,6 +12311,8 @@
 					"Webhooks"
 				],
 				"summary": "List webhooks",
+				"x-fern-sdk-group-name": "webhooks",
+				"x-fern-sdk-method-name": "list",
 				"description": "Returns a paginated list of webhooks owned by the authenticated user. Requires `webhooks:read` scope and the `developer` entitlement.",
 				"operationId": "get_WebhooksList",
 				"parameters": [
@@ -12259,6 +12548,8 @@
 					"Webhooks"
 				],
 				"summary": "Create webhook",
+				"x-fern-sdk-group-name": "webhooks",
+				"x-fern-sdk-method-name": "create",
 				"description": "Creates a webhook for the authenticated user. Requires `webhooks:write` scope and the `developer` entitlement.",
 				"operationId": "post_WebhooksCreate",
 				"requestBody": {
@@ -12526,6 +12817,8 @@
 					"Webhooks"
 				],
 				"summary": "Get a webhook by ID",
+				"x-fern-sdk-group-name": "webhooks",
+				"x-fern-sdk-method-name": "get",
 				"description": "Returns one webhook owned by the authenticated user, including the 10 most recent delivery attempts. Requires `webhooks:read` scope and the `developer` entitlement.",
 				"operationId": "get_WebhooksGet",
 				"parameters": [
@@ -12825,6 +13118,8 @@
 					"Webhooks"
 				],
 				"summary": "Update a webhook",
+				"x-fern-sdk-group-name": "webhooks",
+				"x-fern-sdk-method-name": "update",
 				"description": "Updates mutable webhook fields (including status for enable/disable). Requires `webhooks:write` scope and the `developer` entitlement.",
 				"operationId": "patch_WebhooksUpdate",
 				"parameters": [
@@ -13123,6 +13418,9 @@
 					"Webhooks"
 				],
 				"summary": "Delete a webhook",
+				"x-fern-sdk-group-name": "webhooks",
+				"x-fern-sdk-method-name": "delete",
+				"x-forge-require-confirmation": "This deletes the webhook. Bredbox stops sending it events immediately.",
 				"description": "Deletes a webhook owned by the authenticated user.",
 				"operationId": "delete_WebhooksDelete",
 				"parameters": [
@@ -13287,6 +13585,8 @@
 					"Applications"
 				],
 				"summary": "List connected applications",
+				"x-fern-sdk-group-name": "authorizations",
+				"x-fern-sdk-method-name": "list",
 				"operationId": "get_AuthorizationsList",
 				"parameters": [
 					{
@@ -13480,6 +13780,9 @@
 					"Applications"
 				],
 				"summary": "Disconnect an application",
+				"x-fern-sdk-group-name": "authorizations",
+				"x-fern-sdk-method-name": "delete",
+				"x-forge-require-confirmation": "This disconnects the application and revokes its access immediately. It must be authorized again to use your account.",
 				"operationId": "delete_AuthorizationsDelete",
 				"parameters": [
 					{
