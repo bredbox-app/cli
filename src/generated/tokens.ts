@@ -25,7 +25,7 @@ export const tokens: CommandGroup = {
 					required: true,
 				},
 				{
-					name: "scopes",
+					name: "scope",
 					wire: "scopes",
 					in: "body",
 					type: "string",
@@ -169,7 +169,7 @@ export const tokens: CommandGroup = {
 					required: false,
 				},
 				{
-					name: "scopes",
+					name: "scope",
 					wire: "scopes",
 					in: "body",
 					type: "string",

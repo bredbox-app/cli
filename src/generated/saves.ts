@@ -46,7 +46,7 @@ export const saves: CommandGroup = {
 					required: false,
 				},
 				{
-					name: "tags",
+					name: "tag",
 					wire: "tags",
 					in: "body",
 					type: "string",
@@ -803,7 +803,7 @@ export const saves: CommandGroup = {
 							positional: true,
 						},
 						{
-							name: "tags",
+							name: "tag",
 							wire: "tags",
 							in: "body",
 							type: "string",

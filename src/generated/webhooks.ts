@@ -49,7 +49,7 @@ export const webhooks: CommandGroup = {
 					choices: ["explicit", "all_events"],
 				},
 				{
-					name: "event-types",
+					name: "event-type",
 					wire: "event_types",
 					in: "body",
 					type: "string",
@@ -188,7 +188,7 @@ export const webhooks: CommandGroup = {
 					choices: ["explicit", "all_events"],
 				},
 				{
-					name: "event-types",
+					name: "event-type",
 					wire: "event_types",
 					in: "body",
 					type: "string",

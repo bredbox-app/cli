@@ -223,18 +223,56 @@ function parametersOf(method: Method): ObjectType | undefined {
 }
 
 /**
+ * Makes the last word of a kebab-case name singular: `event-types` gives
+ * `event-type`, `categories` gives `category`. Words such as `status` and
+ * `address` and `analysis` are left alone.
+ * @param name The name, in kebab-case.
+ * @returns The singular name.
+ */
+function singular(name: string): string {
+	const words = name.split("-");
+	const last = words.pop()!;
+
+	if (/[^aeiou]ies$/u.test(last)) {
+		words.push(`${last.slice(0, -3)}y`);
+	} else if (/[^isu]s$/u.test(last)) {
+		words.push(last.slice(0, -1));
+	} else {
+		words.push(last);
+	}
+
+	return words.join("-");
+}
+
+/**
  * Picks a name for the items of an array body from the group the method is
  * in: `tags` gives `tag`.
  * @param method The method.
  * @returns The singular name, in kebab-case.
  */
 function itemName(method: Method): string {
-	const words = [...method.group.name.words];
-	const last = words.pop() ?? "item";
+	return singular(method.group.name.kebab() || "item");
+}
 
-	words.push(last.endsWith("s") ? last.slice(0, -1) : last);
+/**
+ * Names array flags for one value, since each value is given by repeating
+ * the flag: `--tag a --tag b`, not `--tags a --tags b`. A flag keeps its
+ * name when the singular one is taken by another flag.
+ * @param flags The flags of the method.
+ * @returns The flags, renamed.
+ */
+function singularFlags(flags: readonly Arg[]): Arg[] {
+	return flags.map(flag => {
+		if (!flag.array) {
+			return flag;
+		}
 
-	return words.join("-");
+		const name = singular(flag.name);
+
+		return flags.some(other => other.name === name)
+			? flag
+			: { ...flag, name };
+	});
 }
 
 /**
@@ -601,7 +639,10 @@ export function command(method: Method): Command {
 	);
 
 	const body = bodyArgs(method.body);
-	const renamed = renameFlags(method, [...queryArgs, ...body.args]);
+	const renamed = renameFlags(
+		method,
+		singularFlags([...queryArgs, ...body.args]),
+	);
 	const queryFlags = renamed.slice(0, queryArgs.length).map(avoidReserved);
 	const bodyFlags = renamed.slice(queryArgs.length).map(avoidReserved);
 	const promoted = bodyFlags.filter(arg => arg.positional);
