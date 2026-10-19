@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.2.0](https://github.com/bredbox-app/cli/compare/cli-v0.1.0...cli-v0.2.0) (2026-10-19)
+
+
+### ⚠ BREAKING CHANGES
+
+* More secure login
+* Rename collections --user-save-id to --save-id
+
+### Features
+
+* More secure login ([e31428c](https://github.com/bredbox-app/cli/commit/e31428ce85e46602ba5ca15d63030645030446ad))
+* Rename collections --user-save-id to --save-id ([1632455](https://github.com/bredbox-app/cli/commit/163245551c796e7aeabfcebb1fd3348d7f2c5589))
+
 ## 0.1.0 (2026-10-19)
 
 
