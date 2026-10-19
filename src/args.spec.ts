@@ -320,8 +320,8 @@ describe("parseCommandLine()", () => {
 			...noBody,
 			args: [
 				{
-					name: "token",
-					wire: "token",
+					name: "output",
+					wire: "output",
 					in: "query",
 					type: "string",
 					required: false,
@@ -330,7 +330,7 @@ describe("parseCommandLine()", () => {
 		};
 
 		expect(() => parseCommandLine(clashing, [])).toThrow(
-			"Command argument --token clashes with a global flag.",
+			"Command argument --output clashes with a global flag.",
 		);
 	});
 
@@ -415,21 +415,25 @@ describe("globalFlagLength()", () => {
 	});
 
 	it("should take up two arguments for a flag and its value", () => {
-		expect(globalFlagLength(["--token", "t", "x"], 0)).toBe(2);
+		expect(
+			globalFlagLength(["--api-url", "https://api.test", "x"], 0),
+		).toBe(2);
 		expect(globalFlagLength(["x", "-o", "out.json"], 1)).toBe(2);
 	});
 
 	it("should take up one argument for a flag with an inline value", () => {
-		expect(globalFlagLength(["--token=t", "x"], 0)).toBe(1);
+		expect(globalFlagLength(["--api-url=https://api.test", "x"], 0)).toBe(
+			1,
+		);
 	});
 
 	it("should take up one argument for a flag missing its value", () => {
-		expect(globalFlagLength(["--token"], 0)).toBe(1);
+		expect(globalFlagLength(["--api-url"], 0)).toBe(1);
 	});
 
 	it("should take up nothing for a flag that is not global", () => {
 		expect(globalFlagLength(["--filter", "inbox"], 0)).toBe(0);
-		expect(globalFlagLength(["--no-token"], 0)).toBe(0);
+		expect(globalFlagLength(["--no-api-url"], 0)).toBe(0);
 		expect(globalFlagLength(["--constructor"], 0)).toBe(0);
 		expect(globalFlagLength(["-x"], 0)).toBe(0);
 	});
