@@ -69,6 +69,38 @@ function savedSpec(): unknown {
 }
 
 /**
+ * Collects the group descriptions of a document's `x-forge-commands` by
+ * dotted path, whether it nests subgroups under `groups` or gives them
+ * dotted keys.
+ * @param value The value of `x-forge-commands`, or of one of its `groups`.
+ * @param prefix The dotted path of the group holding `value`.
+ * @returns The descriptions, as the document writes them.
+ */
+function groupDescriptions(
+	value: unknown,
+	prefix = "",
+): Record<string, string> {
+	const descriptions: Record<string, string> = {};
+
+	for (const [name, group] of Object.entries(
+		value as Record<string, { description?: string; groups?: unknown }>,
+	)) {
+		const path = prefix === "" ? name : `${prefix}.${name}`;
+
+		if (group.description) {
+			descriptions[path] = group.description;
+		}
+
+		Object.assign(
+			descriptions,
+			groupDescriptions(group.groups ?? {}, path),
+		);
+	}
+
+	return descriptions;
+}
+
+/**
  * Reads every file in a directory into a map by name.
  * @param dir The directory.
  * @returns The files.
@@ -166,16 +198,21 @@ describe("annotate()", () => {
 	});
 
 	it("should describe groups as the document does, as phrases", () => {
-		const { document } = annotate(savedSpec());
+		const source = savedSpec() as Record<string, unknown>;
+		const expected = groupDescriptions(source["x-forge-commands"]);
+		const { document } = annotate(source);
 		const commands = document["x-forge-commands"] as Record<
 			string,
 			{ description: string }
 		>;
 
-		expect(commands.saves).toEqual({ description: "Manage your saves" });
-		expect(commands["me.emails.inbound"]).toEqual({
-			description: "Manage your inbound email address",
-		});
+		expect(Object.keys(commands)).toContain("saves");
+		expect(Object.keys(commands)).toContain("me.emails.inbound");
+
+		for (const [path, { description }] of Object.entries(commands)) {
+			expect(description).not.toMatch(/\.$/u);
+			expect(description).toBe(expected[path]?.replace(/\.$/u, ""));
+		}
 	});
 
 	it("should read array group names and nested group descriptions from the document", () => {
