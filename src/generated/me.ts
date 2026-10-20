@@ -9,7 +9,7 @@ import type { CommandGroup } from "../types.js";
 
 export const me: CommandGroup = {
 	name: "me",
-	description: "Manage your account",
+	description: "Your profile, settings, and account",
 	commands: [
 		{
 			name: "delete",
@@ -39,7 +39,7 @@ export const me: CommandGroup = {
 	groups: [
 		{
 			name: "data",
-			description: "Manage your saved data",
+			description: "Everything stored in your account",
 			commands: [
 				{
 					name: "delete",
@@ -59,12 +59,12 @@ export const me: CommandGroup = {
 		},
 		{
 			name: "emails",
-			description: "Manage your email addresses",
+			description: "Email addresses tied to your account",
 			commands: [],
 			groups: [
 				{
 					name: "inbound",
-					description: "Manage your inbound email address",
+					description: "The address that saves what is emailed to it",
 					commands: [
 						{
 							name: "create",
@@ -147,7 +147,7 @@ export const me: CommandGroup = {
 		},
 		{
 			name: "interests",
-			description: "Manage your interests",
+			description: "The topics you are interested in",
 			commands: [
 				{
 					name: "get",
@@ -188,7 +188,7 @@ export const me: CommandGroup = {
 		},
 		{
 			name: "jobs",
-			description: "Check background jobs",
+			description: "Background jobs running for your account",
 			commands: [
 				{
 					name: "get",
@@ -215,7 +215,7 @@ export const me: CommandGroup = {
 		},
 		{
 			name: "personalization",
-			description: "Manage your personalization setting",
+			description: "Whether recommendations are personalized",
 			commands: [
 				{
 					name: "get",
@@ -252,7 +252,7 @@ export const me: CommandGroup = {
 		},
 		{
 			name: "privacy",
-			description: "Confirm privacy requests",
+			description: "Privacy requests, such as deleting your data",
 			commands: [
 				{
 					name: "confirm",

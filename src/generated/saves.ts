@@ -9,7 +9,7 @@ import type { CommandGroup } from "../types.js";
 
 export const saves: CommandGroup = {
 	name: "saves",
-	description: "Manage your saves",
+	description: "Saved articles, videos, documents, and other content",
 	commands: [
 		{
 			name: "add",
@@ -418,7 +418,7 @@ export const saves: CommandGroup = {
 	groups: [
 		{
 			name: "highlights",
-			description: "Manage highlights in a save",
+			description: "Highlights on saves",
 			commands: [
 				{
 					name: "create",
@@ -610,7 +610,7 @@ export const saves: CommandGroup = {
 		},
 		{
 			name: "listening",
-			description: "Manage listening progress for a save",
+			description: "How far you have listened to a save",
 			commands: [
 				{
 					name: "get",
@@ -667,7 +667,7 @@ export const saves: CommandGroup = {
 		},
 		{
 			name: "progress",
-			description: "Manage reading progress for a save",
+			description: "How far you have read a save",
 			commands: [
 				{
 					name: "get",
@@ -739,7 +739,7 @@ export const saves: CommandGroup = {
 		},
 		{
 			name: "tags",
-			description: "Manage the tags on a save",
+			description: "The tags on a save",
 			commands: [
 				{
 					name: "add",

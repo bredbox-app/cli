@@ -9,7 +9,7 @@ import type { CommandGroup } from "../types.js";
 
 export const tokens: CommandGroup = {
 	name: "tokens",
-	description: "Manage your API tokens",
+	description: "API tokens for scripts and integrations",
 	commands: [
 		{
 			name: "create",
