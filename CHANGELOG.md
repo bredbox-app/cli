@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.3.0](https://github.com/bredbox-app/cli/compare/cli-v0.2.0...cli-v0.3.0) (2026-10-19)
+
+
+### ⚠ BREAKING CHANGES
+
+* Use singular names for array flags
+
+### Features
+
+* Use singular names for array flags ([7125bb5](https://github.com/bredbox-app/cli/commit/7125bb5d11a13838141c8e506fa34dfeee535606))
+
 ## [0.2.0](https://github.com/bredbox-app/cli/compare/cli-v0.1.0...cli-v0.2.0) (2026-10-19)
 
 
