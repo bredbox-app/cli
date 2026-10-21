@@ -61,6 +61,8 @@ bredbox me get
 
 Run `bredbox --help` for the groups, `bredbox saves --help` for the commands in a group, and `bredbox saves list --help` for the options of a command. Every command's help shows the HTTP request it sends.
 
+Add `--json` to any help for a machine-readable description, for scripts and agents. `bredbox --help --json` describes every group and command at once. `bredbox saves tags add --help --json` describes one command: its HTTP request, and each argument's type, whether it is positional or required, its choices and default, and the API field it is sent as, which is also its key in `--body`.
+
 - **Path parameters** are positionals, in the order they appear in the URL.
 - **Query parameters and body fields** are flags, in kebab-case: `per_page` is `--per-page`. Repeat a flag for an array value. Boolean flags take `--no-` to pass false: `--no-is-favorite`.
 - **Nested objects** are given as JSON: `--location '{"kind":"pdf","page":3}'`.

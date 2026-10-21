@@ -18,6 +18,79 @@ import type { Arg, Command, CommandGroup } from "./types.js";
  */
 type Row = [string, string];
 
+/**
+ * A global option.
+ */
+interface GlobalOption {
+	/** The long flag: `--output`. */
+	name: string;
+
+	/** The short flag, if there is one: `-o`. */
+	short?: string;
+
+	/** What the flag takes, if it takes a value: `file`. */
+	value?: string;
+
+	/** What the flag does. */
+	description: string;
+}
+
+/**
+ * An argument of a command, as described by `--help --json`.
+ */
+export interface ArgSchema {
+	name: string;
+	positional: boolean;
+	type: Arg["type"];
+	required: boolean;
+	array?: true;
+	in: Arg["in"];
+	field?: string;
+	description?: string;
+	choices?: readonly (string | number | boolean)[];
+	default?: unknown;
+	file?: true;
+	secret?: true;
+}
+
+/**
+ * A command, as described by `--help --json`.
+ */
+export interface CommandSchema {
+	command: string;
+	summary: string;
+	description?: string;
+	deprecated?: true;
+	request?: { method: string; path: string };
+	arguments: ArgSchema[];
+	body: Command["body"];
+	response: Command["response"];
+	columns?: string[];
+	confirmation?: string;
+}
+
+/**
+ * A group, as described by `--help --json`: its commands in brief, and its
+ * subgroups in full.
+ */
+export interface GroupSchema {
+	group: string;
+	description: string;
+	commands: { command: string; summary: string; deprecated?: true }[];
+	groups: GroupSchema[];
+}
+
+/**
+ * The whole program, as described by `--help --json`.
+ */
+export interface RootSchema {
+	program: string;
+	version: string;
+	description: string;
+	options: GlobalOption[];
+	groups: GroupSchema[];
+}
+
 //-----------------------------------------------------------------------------
 // Exports
 //-----------------------------------------------------------------------------
@@ -28,21 +101,139 @@ type Row = [string, string];
 export const PROGRAM = "bredbox";
 
 /**
+ * The global options.
+ */
+export const GLOBAL_OPTIONS: readonly GlobalOption[] = [
+	{
+		name: "--api-url",
+		value: "url",
+		description: "API base URL (or set BREDBOX_API_URL)",
+	},
+	{
+		name: "--body",
+		value: "json|@file",
+		description: "Send this JSON as the request body",
+	},
+	{
+		name: "--output",
+		short: "-o",
+		value: "file",
+		description: "Write the response to a file",
+	},
+	{
+		name: "--pretty",
+		description: "Indent JSON output (default when writing to a terminal)",
+	},
+	{
+		name: "--compact",
+		description: "Print JSON on one line (default when piped)",
+	},
+	{
+		name: "--json",
+		description:
+			"Print JSON, even on a terminal; with --help, print help as JSON",
+	},
+	{
+		name: "--table",
+		description: "Print tables and fields (default on a terminal)",
+	},
+	{ name: "--force", short: "-f", description: "Skip confirmation prompts" },
+	{
+		name: "--dry-run",
+		description: "Print the request instead of sending it",
+	},
+	{ name: "--help", short: "-h", description: "Show help" },
+	{ name: "--version", short: "-v", description: "Show the version" },
+];
+
+/**
  * The global options, as rows of help.
  */
-export const GLOBAL_OPTION_ROWS: readonly Row[] = [
-	["--api-url <url>", "API base URL (or set BREDBOX_API_URL)"],
-	["--body <json|@file>", "Send this JSON as the request body"],
-	["-o, --output <file>", "Write the response to a file"],
-	["--pretty", "Indent JSON output (default when writing to a terminal)"],
-	["--compact", "Print JSON on one line (default when piped)"],
-	["--json", "Print JSON, even on a terminal"],
-	["--table", "Print tables and fields (default on a terminal)"],
-	["-f, --force", "Skip confirmation prompts"],
-	["--dry-run", "Print the request instead of sending it"],
-	["-h, --help", "Show help"],
-	["-v, --version", "Show the version"],
-];
+export const GLOBAL_OPTION_ROWS: readonly Row[] = GLOBAL_OPTIONS.map(
+	(option): Row => [
+		[
+			option.short ? `${option.short}, ` : "",
+			option.name,
+			option.value ? ` <${option.value}>` : "",
+		].join(""),
+		option.description,
+	],
+);
+
+/**
+ * Describes the whole program for `--help --json`.
+ * @param groups The top-level groups, in the order to list them.
+ * @param description A sentence about the program.
+ * @param version The version of the program.
+ * @returns The description.
+ */
+export function rootSchema(
+	groups: readonly CommandGroup[],
+	description: string,
+	version: string,
+): RootSchema {
+	return {
+		program: PROGRAM,
+		version,
+		description,
+		options: GLOBAL_OPTIONS.map(option => ({ ...option })),
+		groups: groups.map(group => groupSchema(group, [group.name])),
+	};
+}
+
+/**
+ * Describes a group for `--help --json`, with every group under it.
+ * @param group The group.
+ * @param path The words that name the group, top level first.
+ * @returns The description.
+ */
+export function groupSchema(
+	group: CommandGroup,
+	path: readonly string[],
+): GroupSchema {
+	return {
+		group: path.join(" "),
+		description: group.description,
+		commands: group.commands
+			.filter(command => !command.hidden)
+			.map(command => ({
+				command: [...path, command.name].join(" "),
+				summary: command.summary,
+				...(command.deprecated ? { deprecated: true as const } : {}),
+			})),
+		groups: group.groups.map(sub => groupSchema(sub, [...path, sub.name])),
+	};
+}
+
+/**
+ * Describes a command for `--help --json`.
+ * @param command The command.
+ * @param path The words that name the command, top level first.
+ * @returns The description.
+ */
+export function commandSchema(
+	command: Command,
+	path: readonly string[],
+): CommandSchema {
+	return {
+		command: path.join(" "),
+		summary: command.summary,
+		...(command.description && command.description !== command.summary
+			? { description: command.description }
+			: {}),
+		...(command.deprecated ? { deprecated: true as const } : {}),
+		...(command.method === ""
+			? {}
+			: { request: { method: command.method, path: command.path } }),
+		arguments: command.args.map(arg => argSchema(arg, command)),
+		body: command.body,
+		response: command.response,
+		...(command.columns ? { columns: [...command.columns] } : {}),
+		...(command.confirmation === undefined
+			? {}
+			: { confirmation: command.confirmation }),
+	};
+}
 
 /**
  * Renders the help of the whole program.
@@ -196,6 +387,36 @@ export function commandHelp(command: Command, path: readonly string[]): string {
 //-----------------------------------------------------------------------------
 // Helpers
 //-----------------------------------------------------------------------------
+
+/**
+ * Describes an argument for `--help --json`. The field is the name the API
+ * uses, which is also the key to give in `--body`; it is left out when the
+ * argument is not sent or is the whole body.
+ * @param arg The argument.
+ * @param command The command it belongs to.
+ * @returns The description.
+ */
+function argSchema(arg: Arg, command: Command): ArgSchema {
+	const sent =
+		arg.in !== "none" && !(arg.in === "body" && command.body === "array");
+
+	return {
+		name: arg.name,
+		positional: arg.positional === true,
+		type: arg.type,
+		required: arg.required,
+		...(arg.array ? { array: true as const } : {}),
+		in: arg.in,
+		...(sent ? { field: arg.wire } : {}),
+		...(arg.description
+			? { description: arg.description.replace(/\s+/gu, " ").trim() }
+			: {}),
+		...(arg.choices ? { choices: [...arg.choices] } : {}),
+		...(arg.default === undefined ? {} : { default: arg.default }),
+		...(arg.file ? { file: true as const } : {}),
+		...(arg.secret ? { secret: true as const } : {}),
+	};
+}
 
 /**
  * Returns how a positional is written in a usage line.

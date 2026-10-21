@@ -8,7 +8,14 @@
 //-----------------------------------------------------------------------------
 
 import { describe, expect, it } from "vitest";
-import { commandHelp, groupHelp, rootHelp } from "./help.js";
+import {
+	commandHelp,
+	commandSchema,
+	groupHelp,
+	groupSchema,
+	rootHelp,
+	rootSchema,
+} from "./help.js";
 import type { Command, CommandGroup } from "./types.js";
 
 //-----------------------------------------------------------------------------
@@ -163,5 +170,188 @@ describe("commandHelp()", () => {
 
 		expect(described).toHaveLength(1);
 		expect(lines.every(line => line.length <= 80)).toBe(true);
+	});
+});
+
+describe("rootSchema()", () => {
+	it("should describe the program, the global options and every group", () => {
+		const schema = rootSchema([things], "A CLI.", "1.2.3");
+
+		expect(schema.program).toBe("bredbox");
+		expect(schema.version).toBe("1.2.3");
+		expect(schema.description).toBe("A CLI.");
+		expect(schema.options).toContainEqual({
+			name: "--output",
+			short: "-o",
+			value: "file",
+			description: "Write the response to a file",
+		});
+		expect(schema.options.map(option => option.name)).not.toContain(
+			"--token",
+		);
+		expect(schema.groups).toEqual([groupSchema(things, ["things"])]);
+	});
+});
+
+describe("groupSchema()", () => {
+	it("should list commands by full name, hiding hidden commands and marking deprecated ones", () => {
+		expect(groupSchema(things, ["things"])).toEqual({
+			group: "things",
+			description: "Things to do",
+			commands: [
+				{ command: "things list", summary: "List things" },
+				{ command: "things update", summary: "Update a thing" },
+				{
+					command: "things old",
+					summary: "List things",
+					deprecated: true,
+				},
+			],
+			groups: [
+				{
+					group: "things parts",
+					description: "Parts of things",
+					commands: [],
+					groups: [],
+				},
+			],
+		});
+	});
+});
+
+describe("commandSchema()", () => {
+	it("should describe the request and the arguments", () => {
+		expect(commandSchema(list, ["things", "list"])).toEqual({
+			command: "things list",
+			summary: "List things",
+			request: { method: "GET", path: "/things" },
+			arguments: [
+				{
+					name: "filter",
+					positional: false,
+					type: "string",
+					required: false,
+					in: "query",
+					field: "filter",
+					description: "Which things to list",
+					choices: ["all", "some"],
+					default: "all",
+				},
+				{
+					name: "type",
+					positional: false,
+					type: "string",
+					required: false,
+					array: true,
+					in: "query",
+					field: "type",
+				},
+			],
+			body: "none",
+			response: "json",
+		});
+	});
+
+	it("should include the description, positionals, body fields and confirmation", () => {
+		const schema = commandSchema(update, ["things", "update"]);
+
+		expect(schema.description).toBe(update.description);
+		expect(schema.confirmation).toBe("This changes the thing.");
+		expect(schema.body).toBe("object");
+		expect(schema.arguments[0]).toEqual({
+			name: "thing-id",
+			positional: true,
+			type: "string",
+			required: true,
+			in: "path",
+			field: "thingId",
+		});
+		expect(schema.arguments[1]).toMatchObject({
+			name: "title",
+			in: "body",
+			field: "title",
+			required: true,
+		});
+	});
+
+	it("should leave out the field of an array body and of a local argument, and the request of a local command", () => {
+		const tag: Command = {
+			name: "add",
+			summary: "Add tags",
+			method: "POST",
+			path: "/things/{thingId}/tags",
+			args: [
+				{
+					name: "tag",
+					wire: "body",
+					in: "body",
+					type: "string",
+					positional: true,
+					array: true,
+					required: false,
+				},
+			],
+			body: "array",
+			response: "json",
+		};
+		const local: Command = {
+			name: "login",
+			summary: "Log in",
+			method: "",
+			path: "",
+			args: [
+				{
+					name: "token",
+					wire: "token",
+					in: "none",
+					type: "string",
+					required: false,
+					secret: true,
+				},
+			],
+			body: "none",
+			response: "none",
+		};
+
+		expect(commandSchema(tag, ["things", "tags", "add"]).arguments).toEqual(
+			[
+				{
+					name: "tag",
+					positional: true,
+					type: "string",
+					required: false,
+					array: true,
+					in: "body",
+				},
+			],
+		);
+
+		const schema = commandSchema(local, ["auth", "login"]);
+
+		expect(schema).not.toHaveProperty("request");
+		expect(schema.arguments).toEqual([
+			{
+				name: "token",
+				positional: false,
+				type: "string",
+				required: false,
+				in: "none",
+				secret: true,
+			},
+		]);
+	});
+
+	it("should collapse whitespace in descriptions and include columns", () => {
+		const schema = commandSchema(
+			{
+				...list,
+				columns: ["id", "title"],
+				args: [{ ...list.args[0], description: "Which\n  things" }],
+			},
+			["things", "list"],
+		);
+
+		expect(schema.columns).toEqual(["id", "title"]);
+		expect(schema.arguments[0].description).toBe("Which things");
 	});
 });

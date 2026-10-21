@@ -14,6 +14,7 @@ import { createInterface } from "node:readline/promises";
 import {
 	globalFlagLength,
 	parseCommandLine,
+	parseGlobals,
 	type GlobalFlags,
 } from "./args.js";
 import { BredboxClient } from "./client.js";
@@ -30,9 +31,22 @@ import {
 	UsageError,
 } from "./errors.js";
 import { api, groups as generatedGroups } from "./generated/index.js";
-import { commandHelp, groupHelp, PROGRAM, rootHelp } from "./help.js";
+import {
+	commandHelp,
+	commandSchema,
+	groupHelp,
+	groupSchema,
+	PROGRAM,
+	rootHelp,
+	rootSchema,
+} from "./help.js";
 import { isLocalCommand, localGroups } from "./local.js";
-import { formatJson, writeResponse, type Io } from "./output.js";
+import {
+	formatJson,
+	shouldPrettyPrint,
+	writeResponse,
+	type Io,
+} from "./output.js";
 import type { Command, CommandGroup } from "./types.js";
 
 //-----------------------------------------------------------------------------
@@ -229,6 +243,19 @@ function runRoot(
 		return 0;
 	}
 
+	if (wantsHelp(rest)) {
+		const { globals } = parseGlobals(rest);
+
+		if (globals.json) {
+			writeHelpJson(
+				rootSchema(groups, DESCRIPTION, VERSION),
+				globals,
+				io,
+			);
+			return 0;
+		}
+	}
+
 	const help = rootHelp(groups, DESCRIPTION);
 
 	if (rest.length === 0 || wantsHelp(rest)) {
@@ -251,6 +278,19 @@ function runGroup(
 	resolution: Extract<Resolution, { kind: "group" }>,
 	io: Io,
 ): number {
+	if (wantsHelp(resolution.rest)) {
+		const { globals } = parseGlobals(resolution.rest);
+
+		if (globals.json) {
+			writeHelpJson(
+				groupSchema(resolution.group, resolution.path),
+				globals,
+				io,
+			);
+			return 0;
+		}
+	}
+
 	const help = groupHelp(resolution.group, resolution.path);
 
 	if (resolution.rest.length === 0 || wantsHelp(resolution.rest)) {
@@ -280,6 +320,11 @@ async function runCommand(
 	const parsed = parseCommandLine(command, rest, path);
 
 	if (parsed.globals.help) {
+		if (parsed.globals.json) {
+			writeHelpJson(commandSchema(command, path), parsed.globals, io);
+			return 0;
+		}
+
 		io.stdout.write(commandHelp(command, path));
 		return 0;
 	}
@@ -433,6 +478,25 @@ function describeRequest(request: {
  */
 function wantsHelp(argv: readonly string[]): boolean {
 	return argv.includes("--help") || argv.includes("-h");
+}
+
+/**
+ * Writes help as JSON, for `--help --json`, indented as a response would be.
+ * @param schema The description of the program, group or command.
+ * @param globals The global flags.
+ * @param io The streams.
+ */
+function writeHelpJson(schema: unknown, globals: GlobalFlags, io: Io): void {
+	io.stdout.write(
+		formatJson(
+			schema,
+			shouldPrettyPrint({
+				io,
+				pretty: globals.pretty,
+				compact: globals.compact,
+			}),
+		),
+	);
 }
 
 /**

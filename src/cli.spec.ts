@@ -275,6 +275,97 @@ describe("run()", () => {
 		expect(out.join("")).toContain("Usage: bredbox things get <thing-id>");
 	});
 
+	it("should print the root help as JSON with --help --json", async () => {
+		const { io, out } = fakeIo();
+
+		expect(await run(["--help", "--json"], { io, groups, env })).toBe(0);
+
+		const schema = JSON.parse(out.join(""));
+
+		expect(schema).toMatchObject({ program: "bredbox", version });
+		expect(schema.groups[0].group).toBe("things");
+		expect(out.join("")).not.toContain("\n  ");
+	});
+
+	it("should indent JSON help with --pretty", async () => {
+		const { io, out } = fakeIo();
+
+		expect(
+			await run(["--help", "--json", "--pretty"], { io, groups, env }),
+		).toBe(0);
+		expect(out.join("")).toContain('\n  "program": "bredbox"');
+	});
+
+	it("should indent JSON help on a terminal unless --compact is given", async () => {
+		const tty = fakeIo(true);
+		const compact = fakeIo(true);
+
+		await run(["things", "--help", "--json"], { io: tty.io, groups, env });
+		await run(["things", "--help", "--json", "--compact"], {
+			io: compact.io,
+			groups,
+			env,
+		});
+
+		expect(tty.out.join("")).toContain('\n  "group": "things"');
+		expect(compact.out.join("")).toBe(
+			`${JSON.stringify(JSON.parse(compact.out.join("")))}\n`,
+		);
+	});
+
+	it("should print the help of a group as JSON", async () => {
+		const { io, out } = fakeIo();
+
+		expect(
+			await run(["things", "--json", "--help"], { io, groups, env }),
+		).toBe(0);
+		expect(JSON.parse(out.join("")).group).toBe("things");
+	});
+
+	it("should print the help of a command as JSON without needing its arguments", async () => {
+		const { io, out } = fakeIo();
+
+		expect(
+			await run(["things", "get", "--help", "--json"], {
+				io,
+				groups,
+				env,
+			}),
+		).toBe(0);
+
+		const schema = JSON.parse(out.join(""));
+
+		expect(schema.command).toBe("things get");
+		expect(schema.arguments[0]).toMatchObject({
+			name: "thing-id",
+			positional: true,
+			required: true,
+		});
+	});
+
+	it("should still fail when --json is given without a command or --help", async () => {
+		const { io, out, err } = fakeIo();
+
+		expect(await run(["--json"], { io, groups, env })).toBe(2);
+		expect(out).toEqual([]);
+		expect(err.join("")).toContain("bredbox: Expected a command.");
+	});
+
+	it("should reject --help --json --table on a command", async () => {
+		const { io, err } = fakeIo();
+
+		expect(
+			await run(["things", "get", "--help", "--json", "--table"], {
+				io,
+				groups,
+				env,
+			}),
+		).toBe(2);
+		expect(err[0]).toBe(
+			"bredbox: Expected only one of --table and --json.\n",
+		);
+	});
+
 	it("should fail with usage for an unknown command", async () => {
 		const { io, err } = fakeIo();
 
