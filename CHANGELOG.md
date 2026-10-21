@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.4.0](https://github.com/bredbox-app/cli/compare/cli-v0.3.0...cli-v0.4.0) (2026-10-21)
+
+
+### Features
+
+* Accept positional arguments as flags ([9425da4](https://github.com/bredbox-app/cli/commit/9425da45a9c43846749bfaf640a57adf9a3b4b52))
+* Print help as JSON with --help --json ([a8a1128](https://github.com/bredbox-app/cli/commit/a8a1128030be9ec6fef73fdecdbfef3493f65127))
+* Take tags as words in saves tags set ([c2fc37e](https://github.com/bredbox-app/cli/commit/c2fc37e5329bf2e36d103c4c9edc90fdea729b7a))
+
+
+### Bug Fixes
+
+* Sync generated files with the live API ([8bc5ce9](https://github.com/bredbox-app/cli/commit/8bc5ce92a2f8c8f8e4314a3b812de6cf1bd2296d))
+* Sync with live API ([#5](https://github.com/bredbox-app/cli/issues/5)) ([8bc5ce9](https://github.com/bredbox-app/cli/commit/8bc5ce92a2f8c8f8e4314a3b812de6cf1bd2296d))
+
 ## [0.3.0](https://github.com/bredbox-app/cli/compare/cli-v0.2.0...cli-v0.3.0) (2026-10-19)
 
 
