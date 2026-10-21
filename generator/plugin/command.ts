@@ -3,7 +3,8 @@
  *
  * Path parameters become positionals, in the order of the path template.
  * Query parameters and the fields of a JSON object body become flags. A
- * JSON array body becomes trailing positionals. A multipart body becomes
+ * JSON array body becomes trailing positionals, as does an array field of
+ * an object body that `POSITIONALS` names. A multipart body becomes
  * flags, with its file field taking a path to upload. A command whose
  * response is a list gets the columns of the table it prints.
  * @author Nicholas C. Zakas
@@ -14,7 +15,9 @@
 //-----------------------------------------------------------------------------
 
 import type {
+	ArrayType,
 	Body,
+	Content,
 	Field,
 	Group,
 	Method,
@@ -30,7 +33,12 @@ import {
 	type CommandGroup,
 	type ResponseKind,
 } from "../../src/types.ts";
-import { COLUMNS_EXTENSION, FLAGS_EXTENSION } from "../annotate.ts";
+import {
+	COLUMNS_EXTENSION,
+	FLAGS_EXTENSION,
+	ITEMS_REQUIRED_EXTENSION,
+	POSITIONAL_EXTENSION,
+} from "../annotate.ts";
 
 //-----------------------------------------------------------------------------
 // Helpers
@@ -276,11 +284,51 @@ function singularFlags(flags: readonly Arg[]): Arg[] {
 }
 
 /**
- * Builds the arguments of a body.
+ * Builds the trailing positional that gives the items of a JSON array body.
+ * @param method The method.
  * @param body The body.
- * @returns The kind of body, and its arguments.
+ * @param json The JSON content of the body.
+ * @param type The array type of the content.
+ * @returns The argument.
  */
-function bodyArgs(body: Body | undefined): { kind: BodyKind; args: Arg[] } {
+function itemsArg(
+	method: Method,
+	body: Body,
+	json: Content,
+	type: ArrayType,
+): Arg {
+	const item = argType(type.elem);
+	const arg: Arg = {
+		name: itemName(method),
+		wire: "body",
+		in: "body",
+		// An item that is itself a list is given as JSON.
+		type: item.array ? "json" : item.type,
+		positional: true,
+		array: true,
+		required: method.extension(ITEMS_REQUIRED_EXTENSION) === true,
+		description:
+			json.description ||
+			body.description ||
+			"The items to send as the JSON array body.",
+	};
+
+	if (item.choices && !item.array) {
+		arg.choices = item.choices;
+	}
+
+	return arg;
+}
+
+/**
+ * Builds the arguments of a body.
+ * @param method The method.
+ * @returns The kind of body, and its arguments: a flag for each field of an
+ * object, or the one positional of an array.
+ */
+function bodyArgs(method: Method): { kind: BodyKind; args: Arg[] } {
+	const { body } = method;
+
 	if (!body) {
 		return { kind: "none", args: [] };
 	}
@@ -291,7 +339,10 @@ function bodyArgs(body: Body | undefined): { kind: BodyKind; args: Arg[] } {
 		const type = unwrap(json.type);
 
 		if (type.kind === "array") {
-			return { kind: "array", args: [] };
+			return {
+				kind: "array",
+				args: [itemsArg(method, body, json, type)],
+			};
 		}
 
 		if (type.kind === "object") {
@@ -591,6 +642,46 @@ function renameFlags(method: Method, flags: readonly Arg[]): Arg[] {
 }
 
 /**
+ * Makes the body field that `POSITIONALS` names take the trailing words.
+ * @param method The method.
+ * @param flags The body flags of the method, after any are renamed.
+ * @returns The flags, with that one made a positional.
+ * @throws {TypeError} If `POSITIONALS` gives a command a field it cannot
+ * take words for.
+ */
+function trailingField(method: Method, flags: readonly Arg[]): Arg[] {
+	const given = method.extension(POSITIONAL_EXTENSION);
+
+	if (given === undefined) {
+		return [...flags];
+	}
+
+	const where = `The positional of "${commandWords(method)}" in generator/mapping.ts`;
+
+	if (typeof given !== "string") {
+		throw new TypeError(`${where} must be the name of a body field.`);
+	}
+
+	const field = flags.find(flag => flag.wire === given);
+
+	if (!field || field.in !== "body") {
+		throw new TypeError(
+			`${where} is "${given}", which is not a field of its JSON body.`,
+		);
+	}
+
+	if (!field.array) {
+		throw new TypeError(
+			`${where} is "${given}", which is not an array of values.`,
+		);
+	}
+
+	return flags.map(flag =>
+		flag === field ? { ...flag, positional: true } : flag,
+	);
+}
+
+/**
  * Returns a name that no global flag uses.
  * @param arg The argument.
  * @returns The argument, renamed if it clashed.
@@ -638,31 +729,33 @@ export function command(method: Method): Command {
 			method.path.indexOf(`{${b.wire}}`),
 	);
 
-	const body = bodyArgs(method.body);
+	const body = bodyArgs(method);
+
+	// The items of an array body take every word after the path parameters.
+	const items = body.kind === "array" ? body.args : [];
+	const fields = body.kind === "array" ? [] : body.args;
 	const renamed = renameFlags(
 		method,
-		singularFlags([...queryArgs, ...body.args]),
+		singularFlags([...queryArgs, ...fields]),
 	);
 	const queryFlags = renamed.slice(0, queryArgs.length).map(avoidReserved);
-	const bodyFlags = renamed.slice(queryArgs.length).map(avoidReserved);
-	const promoted = bodyFlags.filter(arg => arg.positional);
+	const bodyFlags = trailingField(
+		method,
+		renamed.slice(queryArgs.length),
+	).map(avoidReserved);
+
+	// A variadic positional takes every word left, so it comes last.
+	const promoted = bodyFlags
+		.filter(arg => arg.positional)
+		.sort((a, b) => Number(a.array === true) - Number(b.array === true));
 	const flags = bodyFlags.filter(arg => !arg.positional);
-	const args: Arg[] = [...pathArgs, ...promoted];
-
-	if (body.kind === "array") {
-		args.push({
-			name: itemName(method),
-			wire: "body",
-			in: "body",
-			type: "string",
-			positional: true,
-			array: true,
-			required: false,
-			description: "The items to send as the JSON array body.",
-		});
-	}
-
-	args.push(...queryFlags, ...flags);
+	const args: Arg[] = [
+		...pathArgs,
+		...promoted,
+		...items,
+		...queryFlags,
+		...flags,
+	];
 
 	const summary =
 		method.summary !== ""

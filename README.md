@@ -64,7 +64,8 @@ Run `bredbox --help` for the groups, `bredbox saves --help` for the commands in 
 Add `--json` to any help for a machine-readable description, for scripts and agents. `bredbox --help --json` describes every group and command at once. `bredbox saves tags add --help --json` describes one command: its HTTP request, and each argument's type, whether it is positional or required, its choices and default, and the API field it is sent as, which is also its key in `--body`.
 
 - **Path parameters** are positionals, in the order they appear in the URL.
-- **Positionals** may also be given as flags of the same name, in any order: `bredbox saves tags add --save-id <save-id> --tag one --tag two`. Words fill the positionals not given as flags.
+- **Lists of values** that a command is about, such as the tags of `saves tags add` and `saves tags set`, take the words after the path parameters.
+- **Positionals** may also be given as flags of the same name, in any order: `bredbox saves tags add --save-id <save-id> --tag one --tag two`. Words fill the positionals not given as flags. Give each value only one way.
 - **Query parameters and body fields** are flags, in kebab-case: `per_page` is `--per-page`. Repeat a flag for an array value. Boolean flags take `--no-` to pass false: `--no-is-favorite`.
 - **Nested objects** are given as JSON: `--location '{"kind":"pdf","page":3}'`.
 - **`@file`** reads a value from a file: `--html @page.html`, `--body @request.json`.

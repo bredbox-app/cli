@@ -9,13 +9,25 @@
 //-----------------------------------------------------------------------------
 
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, readdirSync, readFileSync, rmSync } from "node:fs";
+import {
+	mkdtempSync,
+	readdirSync,
+	readFileSync,
+	rmSync,
+	writeFileSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 import { annotate, commandName, deriveName } from "../generator/annotate.ts";
-import { COLUMNS, CONFIRMATIONS, FLAGS } from "../generator/mapping.ts";
+import {
+	COLUMNS,
+	CONFIRMATIONS,
+	FLAGS,
+	POSITIONALS,
+} from "../generator/mapping.ts";
+import type { CommandGroup } from "../src/types.ts";
 
 //-----------------------------------------------------------------------------
 // Helpers
@@ -29,6 +41,7 @@ const NO_MAPPING = {
 	confirmations: {},
 	columns: {},
 	flags: {},
+	positionals: {},
 };
 
 /**
@@ -277,6 +290,7 @@ describe("annotate()", () => {
 			confirmations: { delete_Widget: "This removes it with --hard." },
 			columns: {},
 			flags: {},
+			positionals: {},
 		});
 
 		expect(warnings).toEqual([]);
@@ -294,6 +308,7 @@ describe("annotate()", () => {
 			confirmations: {},
 			columns: { post_WidgetsAdd: ["id", "part.name"] },
 			flags: {},
+			positionals: {},
 		});
 
 		expect(warnings).toEqual([]);
@@ -317,6 +332,7 @@ describe("annotate()", () => {
 		const { document, warnings } = annotate(WIDGETS, {
 			...NO_MAPPING,
 			flags: { post_WidgetsAdd: { part_name: "name" } },
+			positionals: {},
 		});
 
 		expect(warnings).toEqual([]);
@@ -338,12 +354,122 @@ describe("annotate()", () => {
 		).toEqual(FLAGS.post_AddCollectionItem);
 	});
 
+	it("should give operations the positional of the mapping", () => {
+		const { document, warnings } = annotate(WIDGETS, {
+			...NO_MAPPING,
+			positionals: { post_WidgetsAdd: "part_ids" },
+		});
+
+		expect(warnings).toEqual([]);
+		expect(document.paths!["/widgets"]!.post!["x-bredbox-positional"]).toBe(
+			"part_ids",
+		);
+		expect(
+			document.paths!["/widgets/{id}"]!.delete!["x-bredbox-positional"],
+		).toBeUndefined();
+	});
+
+	it("should give operations of the saved document the positional of the mapping", () => {
+		const { document } = annotate(savedSpec());
+
+		expect(
+			document.paths!["/saves/{saveId}/tags"]!.put![
+				"x-bredbox-positional"
+			],
+		).toBe(POSITIONALS.put_SaveTagsSet);
+	});
+
+	it("should mark operations whose JSON array body needs at least one item", () => {
+		const items = { type: "array", items: { type: "string" } };
+		const { document } = annotate(
+			{
+				components: {
+					schemas: { Tags: { ...items, minItems: 1 } },
+					requestBodies: {
+						Tags: {
+							content: {
+								"application/json": {
+									schema: {
+										$ref: "#/components/schemas/Tags",
+									},
+								},
+							},
+						},
+					},
+				},
+				paths: {
+					"/inline": {
+						post: {
+							operationId: "post_Inline",
+							"x-fern-sdk-group-name": "widgets",
+							"x-fern-sdk-method-name": "inline",
+							requestBody: {
+								content: {
+									"application/json": {
+										schema: { ...items, minItems: 2 },
+									},
+								},
+							},
+						},
+					},
+					"/referenced": {
+						post: {
+							operationId: "post_Referenced",
+							"x-fern-sdk-group-name": "widgets",
+							"x-fern-sdk-method-name": "referenced",
+							requestBody: {
+								$ref: "#/components/requestBodies/Tags",
+							},
+						},
+					},
+					"/optional": {
+						post: {
+							operationId: "post_Optional",
+							"x-fern-sdk-group-name": "widgets",
+							"x-fern-sdk-method-name": "optional",
+							requestBody: {
+								content: {
+									"application/json": {
+										schema: { ...items, minItems: 0 },
+									},
+								},
+							},
+						},
+					},
+					"/object": {
+						post: {
+							operationId: "post_Object",
+							"x-fern-sdk-group-name": "widgets",
+							"x-fern-sdk-method-name": "object",
+							requestBody: {
+								content: {
+									"application/json": {
+										schema: { type: "object", minItems: 1 },
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			NO_MAPPING,
+		);
+		const required = (path: string) =>
+			document.paths![path]!.post!["x-bredbox-items-required"];
+
+		expect(required("/inline")).toBe(true);
+		expect(required("/referenced")).toBe(true);
+		expect(required("/optional")).toBeUndefined();
+		expect(required("/object")).toBeUndefined();
+	});
+
 	it("should give a group the mapping moves the description it had in the document", () => {
 		const { document } = annotate(WIDGETS, {
 			operations: { post_WidgetsAdd: "parts.add" },
 			confirmations: {},
 			columns: {},
 			flags: {},
+			positionals: {},
 		});
 
 		expect(document["x-forge-commands"]).toEqual({
@@ -361,6 +487,7 @@ describe("annotate()", () => {
 			confirmations: { delete_Gone: "Gone." },
 			columns: { get_Gone: ["id"] },
 			flags: { put_Gone: { gone_id: "id" } },
+			positionals: { put_Gone: "ids" },
 		});
 
 		expect(warnings).toEqual([
@@ -369,6 +496,7 @@ describe("annotate()", () => {
 			"delete_Gone is in CONFIRMATIONS in generator/mapping.ts but not in the OpenAPI document.",
 			"get_Gone is in COLUMNS in generator/mapping.ts but not in the OpenAPI document.",
 			"put_Gone is in FLAGS in generator/mapping.ts but not in the OpenAPI document.",
+			"put_Gone is in POSITIONALS in generator/mapping.ts but not in the OpenAPI document.",
 		]);
 	});
 
@@ -524,6 +652,72 @@ describe("src/generated", () => {
 				);
 			} finally {
 				rmSync(out, { recursive: true, force: true });
+			}
+		},
+	);
+
+	it(
+		"should take the items of an array body from its schema",
+		{ timeout: 120_000 },
+		async () => {
+			const dir = mkdtempSync(join(tmpdir(), "bredbox-generated-"));
+			const spec = savedSpec() as {
+				paths: Record<
+					string,
+					Record<
+						string,
+						{
+							requestBody: {
+								content: Record<
+									string,
+									{ schema: Record<string, unknown> }
+								>;
+							};
+						}
+					>
+				>;
+			};
+			const schema =
+				spec.paths["/saves/{saveId}/tags"]!.post!.requestBody.content[
+					"application/json"
+				]!.schema;
+
+			schema.minItems = 1;
+			schema.description = "The tags to add.";
+			writeFileSync(join(dir, "openapi.json"), JSON.stringify(spec));
+
+			try {
+				execFileSync(
+					process.execPath,
+					[
+						join(ROOT, "scripts", "generate.ts"),
+						"--spec",
+						join(dir, "openapi.json"),
+						"--out",
+						join(dir, "out"),
+					],
+					{ cwd: ROOT, stdio: ["ignore", "ignore", "pipe"] },
+				);
+
+				const { saves } = (await import(
+					join(dir, "out", "saves.ts")
+				)) as { saves: CommandGroup };
+				const add = saves.groups
+					.find(group => group.name === "tags")!
+					.commands.find(command => command.name === "add")!;
+
+				expect(add.args.at(-1)).toEqual({
+					name: "tag",
+					wire: "body",
+					in: "body",
+					type: "string",
+					positional: true,
+					array: true,
+					required: true,
+					description: "The tags to add.",
+				});
+			} finally {
+				rmSync(dir, { recursive: true, force: true });
 			}
 		},
 	);

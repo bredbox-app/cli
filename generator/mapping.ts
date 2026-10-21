@@ -97,3 +97,15 @@ export const FLAGS: Readonly<Record<string, Readonly<Record<string, string>>>> =
 		// The save is a save of the user's; "user" adds nothing.
 		post_AddCollectionItem: { user_save_id: "save-id" },
 	};
+
+/**
+ * The array field of a JSON object body that takes the words after the
+ * path parameters, by `operationId`, as its name in the document. The
+ * field may still be given as a flag. A JSON array body takes the words
+ * without being listed here. The generator checks each field against the
+ * document.
+ */
+export const POSITIONALS: Readonly<Record<string, string>> = {
+	// Like "saves tags add", whose array body takes its tags as words.
+	put_SaveTagsSet: "tags",
+};

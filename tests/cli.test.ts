@@ -434,6 +434,88 @@ describe("bredbox saves tags add", () => {
 		expect(calls[0].url).toBe("https://api.test/v2/saves/save-1/tags");
 		expect(calls[0].body).toBe('["a","b"]');
 	});
+
+	it("should refuse a save ID given both as a word and as --save-id", async () => {
+		const { io, err } = fakeIo();
+		const { fetch, calls } = fakeFetch(() => json(200, []));
+
+		const code = await run(
+			["saves", "tags", "add", "save-1", "--save-id", "save-1", "a"],
+			{ io, env, configPath, fetch },
+		);
+
+		expect(code).toBe(2);
+		expect(calls).toHaveLength(0);
+		expect(err.join("")).toContain(
+			'Expected "save-1" once, as --save-id or as <save-id>, not both.',
+		);
+	});
+});
+
+describe("bredbox saves tags set", () => {
+	it("should send trailing positionals as the tags field", async () => {
+		const { io } = fakeIo();
+		const { fetch, calls } = fakeFetch(() => json(200, ["a", "b"]));
+
+		await run(["saves", "tags", "set", "save-1", "a", "b"], {
+			io,
+			env,
+			configPath,
+			fetch,
+		});
+
+		expect(calls[0].method).toBe("PUT");
+		expect(calls[0].url).toBe("https://api.test/v2/saves/save-1/tags");
+		expect(JSON.parse(calls[0].body as string)).toEqual({
+			tags: ["a", "b"],
+		});
+	});
+
+	it("should still take the tags as --tag flags", async () => {
+		const { io } = fakeIo();
+		const { fetch, calls } = fakeFetch(() => json(200, ["a", "b"]));
+
+		await run(
+			["saves", "tags", "set", "save-1", "--tag", "a", "--tag", "b"],
+			{ io, env, configPath, fetch },
+		);
+
+		expect(JSON.parse(calls[0].body as string)).toEqual({
+			tags: ["a", "b"],
+		});
+	});
+
+	it("should require at least one tag", async () => {
+		const { io, err } = fakeIo();
+		const { fetch, calls } = fakeFetch(() => json(200, []));
+
+		const code = await run(["saves", "tags", "set", "save-1"], {
+			io,
+			env,
+			configPath,
+			fetch,
+		});
+
+		expect(code).toBe(2);
+		expect(calls).toHaveLength(0);
+		expect(err.join("")).toContain(
+			"Missing required argument <tag> (or --tag).",
+		);
+	});
+
+	it("should clear the tags with an empty --body", async () => {
+		const { io } = fakeIo();
+		const { fetch, calls } = fakeFetch(() => json(200, []));
+
+		await run(["saves", "tags", "set", "save-1", "--body", '{"tags":[]}'], {
+			io,
+			env,
+			configPath,
+			fetch,
+		});
+
+		expect(JSON.parse(calls[0].body as string)).toEqual({ tags: [] });
+	});
 });
 
 describe("bredbox saves content", () => {

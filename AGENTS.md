@@ -34,6 +34,7 @@ Read [`.github/instructions/javascript.instructions.md`](.github/instructions/ja
 
 - To rename a command, change its entry in `generator/mapping.ts`, then run `npm run generate:offline`
 - To change the columns a list command prints on a terminal, change its entry in `COLUMNS` in `generator/mapping.ts`, then regenerate; the plugin checks each path against the response schema
+- To make an array field of a JSON body take the words after the path parameters, add it to `POSITIONALS` in `generator/mapping.ts`, then regenerate; a JSON array body takes them already
 - To change what a command sends or how it is described, change `generator/plugin/command.ts`, then regenerate
 - To pick up API changes, run `npm run generate`, which fetches the live document and refreshes `generator/openapi.json`
 - The generation drift test fails until `src/generated/` is regenerated after any of these changes

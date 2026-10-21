@@ -428,6 +428,66 @@ describe("parseCommandLine()", () => {
 		);
 	});
 
+	it("should throw when a positional is given both as a flag and as a word", () => {
+		const tagged: Command = {
+			...variadic,
+			args: [
+				{
+					name: "thing-id",
+					wire: "thingId",
+					in: "path",
+					type: "string",
+					required: true,
+					positional: true,
+				},
+				...variadic.args,
+			],
+		};
+
+		expect(() =>
+			parseCommandLine(tagged, ["abc", "--thing-id", "abc", "x"]),
+		).toThrow(
+			new UsageError(
+				'Expected "abc" once, as --thing-id or as <thing-id>, not both.',
+			),
+		);
+	});
+
+	it("should throw when a variadic positional is given both as a flag and as a word", () => {
+		expect(() =>
+			parseCommandLine(variadic, ["--item", "a", "--item", "b", "b"]),
+		).toThrow(
+			new UsageError(
+				'Expected "b" once, as --item or as <item>, not both.',
+			),
+		);
+	});
+
+	it("should not compare words with a global flag that shares a positional's name", () => {
+		const reserved: Command = {
+			...noBody,
+			args: [
+				{
+					name: "output",
+					wire: "output",
+					in: "path",
+					type: "string",
+					required: true,
+					positional: true,
+				},
+			],
+		};
+
+		const { values, globals } = parseCommandLine(reserved, [
+			"out.txt",
+			"--output",
+			"out.txt",
+		]);
+
+		expect(values).toEqual({ output: "out.txt" });
+		expect(globals.output).toBe("out.txt");
+	});
+
 	it("should name the flag when a positional given as a flag has a bad value", () => {
 		const numbered: Command = {
 			...noBody,

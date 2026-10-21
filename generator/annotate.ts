@@ -15,7 +15,13 @@
 // Imports
 //-----------------------------------------------------------------------------
 
-import { COLUMNS, CONFIRMATIONS, FLAGS, OPERATIONS } from "./mapping.ts";
+import {
+	COLUMNS,
+	CONFIRMATIONS,
+	FLAGS,
+	OPERATIONS,
+	POSITIONALS,
+} from "./mapping.ts";
 
 //-----------------------------------------------------------------------------
 // Types
@@ -56,6 +62,9 @@ export interface Mapping {
 
 	/** The flag of each renamed field, by `operationId` and wire name. */
 	flags: Readonly<Record<string, Readonly<Record<string, string>>>>;
+
+	/** The body field that takes the trailing words, by `operationId`. */
+	positionals: Readonly<Record<string, string>>;
 }
 
 /**
@@ -90,6 +99,17 @@ export const COLUMNS_EXTENSION = "x-bredbox-columns";
  * The extension that carries the flags of `FLAGS` to the plugin.
  */
 export const FLAGS_EXTENSION = "x-bredbox-flags";
+
+/**
+ * The extension that carries the field of `POSITIONALS` to the plugin.
+ */
+export const POSITIONAL_EXTENSION = "x-bredbox-positional";
+
+/**
+ * The extension that tells the plugin a JSON array body must have at least
+ * one item, which Forge does not report: the schema's `minItems`.
+ */
+export const ITEMS_REQUIRED_EXTENSION = "x-bredbox-items-required";
 
 const HTTP_METHODS = new Set([
 	"get",
@@ -188,6 +208,62 @@ function documentGroups(
 }
 
 /**
+ * Follows a local `$ref`, such as `#/components/schemas/Tags`, to what it
+ * points at.
+ * @param document The document.
+ * @param value The value, which may be a reference.
+ * @returns What the reference points at, or the value if it is not one.
+ */
+function resolveRef(document: OpenApiDocument, value: unknown): unknown {
+	let current = value;
+
+	for (let i = 0; i < 32; i++) {
+		const ref = (current as { $ref?: unknown } | null)?.$ref;
+
+		if (typeof ref !== "string" || !ref.startsWith("#/")) {
+			return current;
+		}
+
+		current = ref
+			.slice(2)
+			.split("/")
+			.map(key => key.replaceAll("~1", "/").replaceAll("~0", "~"))
+			.reduce<unknown>(
+				(object, key) =>
+					(object as Record<string, unknown> | undefined)?.[key],
+				document,
+			);
+	}
+
+	return current;
+}
+
+/**
+ * Determines whether an operation's JSON body is an array that must have at
+ * least one item.
+ * @param document The document.
+ * @param operation The operation.
+ * @returns Whether it is.
+ */
+function requiresItems(
+	document: OpenApiDocument,
+	operation: OpenApiOperation,
+): boolean {
+	const body = resolveRef(document, operation.requestBody) as
+		{ content?: Record<string, { schema?: unknown }> } | undefined;
+	const schema = resolveRef(
+		document,
+		body?.content?.["application/json"]?.schema,
+	) as { type?: unknown; minItems?: unknown } | undefined;
+
+	return (
+		schema?.type === "array" &&
+		typeof schema.minItems === "number" &&
+		schema.minItems > 0
+	);
+}
+
+/**
  * Derives a `group.method` name for an operation that has no names in the
  * document and is not in `OPERATIONS`, from its first tag and its
  * `operationId`.
@@ -274,9 +350,10 @@ export function annotate(
 		confirmations: CONFIRMATIONS,
 		columns: COLUMNS,
 		flags: FLAGS,
+		positionals: POSITIONALS,
 	},
 ): AnnotateResult {
-	const { operations, confirmations, columns, flags } = mapping;
+	const { operations, confirmations, columns, flags, positionals } = mapping;
 
 	if (typeof source !== "object" || source === null) {
 		throw new TypeError("Expected an OpenAPI document object.");
@@ -382,6 +459,14 @@ export function annotate(
 				operation[FLAGS_EXTENSION] = { ...flags[operationId] };
 			}
 
+			if (positionals[operationId]) {
+				operation[POSITIONAL_EXTENSION] = positionals[operationId];
+			}
+
+			if (requiresItems(document, operation)) {
+				operation[ITEMS_REQUIRED_EXTENSION] = true;
+			}
+
 			for (let i = 1; i <= parts.length; i++) {
 				groupPaths.add(parts.slice(0, i).join("."));
 			}
@@ -401,6 +486,7 @@ export function annotate(
 		["CONFIRMATIONS", Object.keys(confirmations)],
 		["COLUMNS", Object.keys(columns)],
 		["FLAGS", Object.keys(flags)],
+		["POSITIONALS", Object.keys(positionals)],
 	] as const) {
 		for (const operationId of ids) {
 			if (!operationIds.has(operationId)) {

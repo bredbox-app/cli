@@ -232,9 +232,23 @@ export function parseCommandLine(
 	const positionalArgs = command.args.filter(arg => arg.positional);
 	const words = [...parsed.positionals];
 
+	// A word that repeats the value of a positional given as a flag would
+	// fill the next positional instead, so it is more likely a mistake.
+	for (const arg of positionalArgs.filter(hasFlag)) {
+		const given = [parsed.values[arg.name] ?? []].flat();
+		const repeated = words.find(word => given.includes(word));
+
+		if (repeated !== undefined) {
+			throw new UsageError(
+				`Expected ${JSON.stringify(repeated)} once, as --${arg.name} or as <${arg.name}>, not both.`,
+				commandPath,
+			);
+		}
+	}
+
 	for (const arg of positionalArgs) {
 		// A positional given as a flag takes no words.
-		if (parsed.values[arg.name] !== undefined) {
+		if (hasFlag(arg) && parsed.values[arg.name] !== undefined) {
 			continue;
 		}
 

@@ -809,6 +809,7 @@ export const saves: CommandGroup = {
 							type: "string",
 							required: true,
 							array: true,
+							positional: true,
 						},
 					],
 					body: "object",
