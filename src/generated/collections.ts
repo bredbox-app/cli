@@ -9,7 +9,7 @@ import type { CommandGroup } from "../types.js";
 
 export const collections: CommandGroup = {
 	name: "collections",
-	description: "Manage your collections",
+	description: "Collections of saves",
 	commands: [
 		{
 			name: "create",
@@ -144,7 +144,7 @@ export const collections: CommandGroup = {
 	groups: [
 		{
 			name: "items",
-			description: "Manage the saves in a collection",
+			description: "The saves in a collection",
 			commands: [
 				{
 					name: "add",

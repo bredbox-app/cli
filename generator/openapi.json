@@ -12,76 +12,68 @@
 		}
 	],
 	"x-forge-commands": {
-		"saves": {
-			"description": "Manage your saves.",
-			"groups": {
-				"progress": {
-					"description": "Manage reading progress for a save."
-				},
-				"listening": {
-					"description": "Manage listening progress for a save."
-				},
-				"highlights": {
-					"description": "Manage highlights in a save."
-				},
-				"tags": {
-					"description": "Manage the tags on a save."
-				}
-			}
-		},
-		"tags": {
-			"description": "Manage tags across all of your saves."
+		"authorizations": {
+			"description": "Applications connected to your account"
 		},
 		"collections": {
-			"description": "Manage your collections.",
-			"groups": {
-				"items": {
-					"description": "Manage the saves in a collection."
-				}
-			}
+			"description": "Collections of saves"
 		},
-		"imports": {
-			"description": "Import saves from other services."
+		"collections.items": {
+			"description": "The saves in a collection"
 		},
 		"exports": {
-			"description": "Export your saves."
+			"description": "Exports of your data"
+		},
+		"imports": {
+			"description": "Imports of saves from other services"
 		},
 		"me": {
-			"description": "Manage your account.",
-			"groups": {
-				"interests": {
-					"description": "Manage your interests."
-				},
-				"personalization": {
-					"description": "Manage your personalization setting."
-				},
-				"data": {
-					"description": "Manage your saved data."
-				},
-				"privacy": {
-					"description": "Confirm privacy requests."
-				},
-				"jobs": {
-					"description": "Check background jobs."
-				},
-				"emails": {
-					"description": "Manage your email addresses.",
-					"groups": {
-						"inbound": {
-							"description": "Manage your inbound email address."
-						}
-					}
-				}
-			}
+			"description": "Your profile, settings, and account"
+		},
+		"me.data": {
+			"description": "Everything stored in your account"
+		},
+		"me.emails": {
+			"description": "Email addresses tied to your account"
+		},
+		"me.emails.inbound": {
+			"description": "The address that saves what is emailed to it"
+		},
+		"me.interests": {
+			"description": "The topics you are interested in"
+		},
+		"me.jobs": {
+			"description": "Background jobs running for your account"
+		},
+		"me.personalization": {
+			"description": "Whether recommendations are personalized"
+		},
+		"me.privacy": {
+			"description": "Privacy requests, such as deleting your data"
+		},
+		"saves": {
+			"description": "Saved articles, videos, documents, and other content"
+		},
+		"saves.highlights": {
+			"description": "Highlights on saves"
+		},
+		"saves.listening": {
+			"description": "How far you have listened to a save"
+		},
+		"saves.progress": {
+			"description": "How far you have read a save"
+		},
+		"saves.tags": {
+			"description": "The tags on a save"
+		},
+		"tags": {
+			"description": "Tags across all of your saves"
 		},
 		"tokens": {
-			"description": "Manage your API tokens."
+			"description": "API tokens for scripts and integrations"
 		},
 		"webhooks": {
-			"description": "Manage your webhooks."
-		},
-		"authorizations": {
-			"description": "Manage the applications connected to your account."
+			"description": "Webhooks that notify your services of events"
 		}
 	},
 	"components": {

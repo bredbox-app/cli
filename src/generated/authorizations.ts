@@ -9,7 +9,7 @@ import type { CommandGroup } from "../types.js";
 
 export const authorizations: CommandGroup = {
 	name: "authorizations",
-	description: "Manage the applications connected to your account",
+	description: "Applications connected to your account",
 	commands: [
 		{
 			name: "delete",

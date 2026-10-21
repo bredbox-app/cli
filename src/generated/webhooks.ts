@@ -9,7 +9,7 @@ import type { CommandGroup } from "../types.js";
 
 export const webhooks: CommandGroup = {
 	name: "webhooks",
-	description: "Manage your webhooks",
+	description: "Webhooks that notify your services of events",
 	commands: [
 		{
 			name: "create",

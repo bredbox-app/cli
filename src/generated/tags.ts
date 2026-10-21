@@ -9,7 +9,7 @@ import type { CommandGroup } from "../types.js";
 
 export const tags: CommandGroup = {
 	name: "tags",
-	description: "Manage tags across all of your saves",
+	description: "Tags across all of your saves",
 	commands: [
 		{
 			name: "delete",
