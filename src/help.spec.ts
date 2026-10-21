@@ -155,10 +155,50 @@ describe("commandHelp()", () => {
 			"Usage: bredbox things update <thing-id> [options]",
 		);
 		expect(help).toContain("Arguments:\n  <thing-id>");
+		expect(help).toContain("Can also be given as --thing-id.");
 		expect(help).toMatch(/--title <string>\s+Required\./u);
 		expect(help).toContain("--starred");
 		expect(help).toContain("together with --body <json|@file>");
 		expect(help).toContain("asks for confirmation; pass --force");
+	});
+
+	it("should give the flag of a variadic positional, and none for a positional named like a global flag", () => {
+		const command: Command = {
+			name: "confirm",
+			summary: "Confirm",
+			method: "POST",
+			path: "/confirm/{token}",
+			args: [
+				{
+					name: "token",
+					wire: "token",
+					in: "path",
+					type: "string",
+					required: true,
+					positional: true,
+				},
+				{
+					name: "item",
+					wire: "body",
+					in: "body",
+					type: "string",
+					required: false,
+					positional: true,
+					array: true,
+				},
+			],
+			body: "array",
+			response: "json",
+		};
+		const help = commandHelp(command, ["confirm"]);
+
+		expect(help).toContain(
+			"Can also be given as --item, once for each value.",
+		);
+		expect(help).not.toContain("--token");
+		expect(
+			commandSchema(command, ["confirm"]).arguments[0],
+		).not.toHaveProperty("flag");
 	});
 
 	it("should wrap a long description", () => {
@@ -229,6 +269,7 @@ describe("commandSchema()", () => {
 				{
 					name: "filter",
 					positional: false,
+					flag: "--filter",
 					type: "string",
 					required: false,
 					in: "query",
@@ -240,6 +281,7 @@ describe("commandSchema()", () => {
 				{
 					name: "type",
 					positional: false,
+					flag: "--type",
 					type: "string",
 					required: false,
 					array: true,
@@ -261,6 +303,7 @@ describe("commandSchema()", () => {
 		expect(schema.arguments[0]).toEqual({
 			name: "thing-id",
 			positional: true,
+			flag: "--thing-id",
 			type: "string",
 			required: true,
 			in: "path",
@@ -318,6 +361,7 @@ describe("commandSchema()", () => {
 				{
 					name: "tag",
 					positional: true,
+					flag: "--tag",
 					type: "string",
 					required: false,
 					array: true,
@@ -333,6 +377,7 @@ describe("commandSchema()", () => {
 			{
 				name: "token",
 				positional: false,
+				flag: "--token",
 				type: "string",
 				required: false,
 				in: "none",

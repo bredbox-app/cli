@@ -7,7 +7,7 @@
 // Imports
 //-----------------------------------------------------------------------------
 
-import type { Arg, Command, CommandGroup } from "./types.js";
+import { hasFlag, type Arg, type Command, type CommandGroup } from "./types.js";
 
 //-----------------------------------------------------------------------------
 // Types
@@ -41,6 +41,7 @@ interface GlobalOption {
 export interface ArgSchema {
 	name: string;
 	positional: boolean;
+	flag?: string;
 	type: Arg["type"];
 	required: boolean;
 	array?: true;
@@ -403,6 +404,7 @@ function argSchema(arg: Arg, command: Command): ArgSchema {
 	return {
 		name: arg.name,
 		positional: arg.positional === true,
+		...(hasFlag(arg) ? { flag: `--${arg.name}` } : {}),
 		type: arg.type,
 		required: arg.required,
 		...(arg.array ? { array: true as const } : {}),
@@ -468,6 +470,14 @@ function argDescription(arg: Arg): string {
 
 	if (arg.array && !arg.positional) {
 		parts.push("Repeat the flag for several values.");
+	}
+
+	if (arg.positional && hasFlag(arg)) {
+		parts.push(
+			arg.array
+				? `Can also be given as --${arg.name}, once for each value.`
+				: `Can also be given as --${arg.name}.`,
+		);
 	}
 
 	if (arg.default !== undefined) {

@@ -11,7 +11,7 @@ import { readFileSync } from "node:fs";
 import { parseArgs, type ParseArgsOptionsConfig } from "node:util";
 import { UsageError } from "./errors.js";
 import { PROGRAM } from "./help.js";
-import { RESERVED_FLAGS, type Arg, type Command } from "./types.js";
+import { hasFlag, RESERVED_FLAGS, type Arg, type Command } from "./types.js";
 
 //-----------------------------------------------------------------------------
 // Types
@@ -171,7 +171,7 @@ export function parseCommandLine(
 	const options: ParseArgsOptionsConfig = globalOptions();
 
 	for (const arg of command.args) {
-		if (arg.positional) {
+		if (arg.positional && !hasFlag(arg)) {
 			continue;
 		}
 
@@ -233,6 +233,11 @@ export function parseCommandLine(
 	const words = [...parsed.positionals];
 
 	for (const arg of positionalArgs) {
+		// A positional given as a flag takes no words.
+		if (parsed.values[arg.name] !== undefined) {
+			continue;
+		}
+
 		if (arg.array) {
 			const rest = words.splice(0);
 
@@ -260,7 +265,7 @@ export function parseCommandLine(
 	}
 
 	for (const arg of command.args) {
-		if (arg.positional) {
+		if (arg.positional && !hasFlag(arg)) {
 			continue;
 		}
 
@@ -270,15 +275,18 @@ export function parseCommandLine(
 			continue;
 		}
 
+		const label = `--${arg.name}`;
+
 		if (Array.isArray(raw)) {
 			values[arg.name] = raw.map(item =>
-				coerce(arg, item as string | boolean, commandPath),
+				coerce(arg, item as string | boolean, commandPath, label),
 			);
 		} else {
 			values[arg.name] = coerce(
 				arg,
 				raw as string | boolean,
 				commandPath,
+				label,
 			);
 		}
 	}
@@ -305,7 +313,11 @@ export function parseCommandLine(
 			continue;
 		}
 
-		const label = arg.positional ? `<${arg.name}>` : `--${arg.name}`;
+		const label = !arg.positional
+			? `--${arg.name}`
+			: hasFlag(arg)
+				? `<${arg.name}> (or --${arg.name})`
+				: `<${arg.name}>`;
 		throw new UsageError(
 			`Missing required argument ${label}.`,
 			commandPath,
@@ -413,6 +425,8 @@ function cleanParseError(error: unknown): string {
  * @param arg The argument.
  * @param raw The text, or a boolean for a boolean flag.
  * @param commandPath The words of the command, for errors.
+ * @param label How the argument was given, for errors; by default, how it
+ * is given normally.
  * @returns The value.
  * @throws {UsageError} If the text is not a value of the type.
  */
@@ -420,8 +434,8 @@ function coerce(
 	arg: Arg,
 	raw: string | boolean,
 	commandPath: readonly string[],
+	label = arg.positional ? `<${arg.name}>` : `--${arg.name}`,
 ): unknown {
-	const label = arg.positional ? `<${arg.name}>` : `--${arg.name}`;
 	let value: unknown;
 
 	switch (arg.type) {

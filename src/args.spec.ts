@@ -237,10 +237,10 @@ describe("parseCommandLine()", () => {
 		expect(() =>
 			parseCommandLine(command, ["--title", "t"], ["things", "update"]),
 		).toThrow(
-			new UsageError("Missing required argument <thing-id>.", [
-				"things",
-				"update",
-			]),
+			new UsageError(
+				"Missing required argument <thing-id> (or --thing-id).",
+				["things", "update"],
+			),
 		);
 	});
 
@@ -344,6 +344,137 @@ describe("parseCommandLine()", () => {
 		const { values } = parseCommandLine(variadic, []);
 
 		expect(values).toEqual({});
+	});
+
+	it("should read a positional given as a flag", () => {
+		const { values } = parseCommandLine(command, [
+			"--title",
+			"t",
+			"--thing-id",
+			"abc",
+		]);
+
+		expect(values).toEqual({ "thing-id": "abc", title: "t" });
+	});
+
+	it("should give the words to the positionals not given as flags", () => {
+		const twoIds: Command = {
+			...noBody,
+			args: [
+				{
+					name: "thing-id",
+					wire: "thingId",
+					in: "path",
+					type: "string",
+					required: true,
+					positional: true,
+				},
+				{
+					name: "part-id",
+					wire: "partId",
+					in: "path",
+					type: "string",
+					required: true,
+					positional: true,
+				},
+			],
+		};
+
+		const { values } = parseCommandLine(twoIds, ["--thing-id", "a", "b"]);
+
+		expect(values).toEqual({ "thing-id": "a", "part-id": "b" });
+	});
+
+	it("should read a variadic positional given as a repeated flag", () => {
+		const { values } = parseCommandLine(variadic, [
+			"--item",
+			"a",
+			"--item",
+			"b c",
+		]);
+
+		expect(values).toEqual({ item: ["a", "b c"] });
+	});
+
+	it("should read the words after a positional given as a flag into a variadic argument", () => {
+		const tagged: Command = {
+			...variadic,
+			args: [
+				{
+					name: "thing-id",
+					wire: "thingId",
+					in: "path",
+					type: "string",
+					required: true,
+					positional: true,
+				},
+				...variadic.args,
+			],
+		};
+
+		const { values } = parseCommandLine(tagged, [
+			"--thing-id",
+			"abc",
+			"a",
+			"b",
+		]);
+
+		expect(values).toEqual({ "thing-id": "abc", item: ["a", "b"] });
+	});
+
+	it("should throw for words left over when a variadic positional is given as a flag", () => {
+		expect(() => parseCommandLine(variadic, ["--item", "a", "b"])).toThrow(
+			new UsageError('Unexpected argument "b".'),
+		);
+	});
+
+	it("should name the flag when a positional given as a flag has a bad value", () => {
+		const numbered: Command = {
+			...noBody,
+			args: [
+				{
+					name: "count",
+					wire: "count",
+					in: "path",
+					type: "number",
+					required: true,
+					positional: true,
+				},
+			],
+		};
+
+		expect(() => parseCommandLine(numbered, ["--count", "x"])).toThrow(
+			'Expected a number for --count, got "x".',
+		);
+		expect(() => parseCommandLine(numbered, ["x"])).toThrow(
+			'Expected a number for <count>, got "x".',
+		);
+	});
+
+	it("should not give a flag to a positional named like a global flag", () => {
+		const confirm: Command = {
+			...noBody,
+			args: [
+				{
+					name: "token",
+					wire: "token",
+					in: "path",
+					type: "string",
+					required: true,
+					positional: true,
+				},
+			],
+		};
+
+		expect(parseCommandLine(confirm, ["abc"]).values).toEqual({
+			token: "abc",
+		});
+		expect(() => parseCommandLine(confirm, [])).toThrow(
+			new UsageError("Missing required argument <token>."),
+		);
+		expect(() => parseCommandLine(confirm, ["--token", "abc"])).toThrow(
+			"The --token flag was removed",
+		);
 	});
 
 	it("should read JSON and body strings from @file", () => {

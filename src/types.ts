@@ -177,3 +177,18 @@ export interface ApiInfo {
 	/** The default base URL of the API. */
 	baseUrl: string;
 }
+
+//-----------------------------------------------------------------------------
+// Functions
+//-----------------------------------------------------------------------------
+
+/**
+ * Reports whether an argument may be given as a flag. Every flag may, and so
+ * may every positional, as `--name`, unless its name is that of a global
+ * flag.
+ * @param arg The argument.
+ * @returns Whether `--name` gives the argument.
+ */
+export function hasFlag(arg: Arg): boolean {
+	return !arg.positional || !RESERVED_FLAGS.includes(arg.name);
+}

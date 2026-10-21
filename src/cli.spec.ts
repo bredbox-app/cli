@@ -387,7 +387,9 @@ describe("run()", () => {
 				configPath,
 			}),
 		).toBe(2);
-		expect(err[0]).toBe("bredbox: Missing required argument <thing-id>.\n");
+		expect(err[0]).toBe(
+			"bredbox: Missing required argument <thing-id> (or --thing-id).\n",
+		);
 		expect(err[1]).toBe("Run 'bredbox things get --help' for usage.\n");
 	});
 
@@ -422,6 +424,25 @@ describe("run()", () => {
 			url: "https://api.test/things/1",
 			headers: { Authorization: "Bearer ***" },
 		});
+	});
+
+	it("should send a positional given as a flag in the path", async () => {
+		const { io } = fakeIo();
+		const { fetch, calls } = jsonFetch(200, { id: "1" });
+
+		expect(
+			await run(["things", "get", "--thing-id", "1"], {
+				io,
+				groups,
+				env: {
+					BREDBOX_TOKEN: "secret",
+					BREDBOX_API_URL: "https://api.test/",
+				},
+				configPath,
+				fetch,
+			}),
+		).toBe(0);
+		expect(calls[0].url).toBe("https://api.test/things/1");
 	});
 
 	it("should send the request and print the response", async () => {
