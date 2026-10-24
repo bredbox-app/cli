@@ -465,7 +465,8 @@
 											"minLength": 1,
 											"maxLength": 100
 										},
-										"maxItems": 10
+										"maxItems": 10,
+										"description": "Tags for the new save; at most 10."
 									},
 									"background": {
 										"type": "boolean"
@@ -4814,14 +4815,17 @@
 					"tags"
 				],
 				"x-fern-sdk-method-name": "list",
+				"description": "Lists a save's tags in alphabetical order.",
 				"operationId": "get_SaveTagsList",
 				"parameters": [
 					{
 						"schema": {
 							"type": "string",
-							"format": "uuid"
+							"format": "uuid",
+							"description": "The ID of the save."
 						},
 						"required": true,
+						"description": "The ID of the save.",
 						"name": "saveId",
 						"in": "path"
 					}
@@ -4918,19 +4922,23 @@
 					"tags"
 				],
 				"x-fern-sdk-method-name": "add",
+				"description": "Adds tags to a save and keeps the tags it already has. Tags the save already has are ignored. Fails with 400 if the save would have more than 10 tags.",
 				"operationId": "post_SaveTagsAdd",
 				"parameters": [
 					{
 						"schema": {
 							"type": "string",
-							"format": "uuid"
+							"format": "uuid",
+							"description": "The ID of the save."
 						},
 						"required": true,
+						"description": "The ID of the save.",
 						"name": "saveId",
 						"in": "path"
 					}
 				],
 				"requestBody": {
+					"required": true,
 					"content": {
 						"application/json": {
 							"schema": {
@@ -4940,7 +4948,9 @@
 									"minLength": 1,
 									"maxLength": 100
 								},
-								"maxItems": 10
+								"minItems": 1,
+								"maxItems": 10,
+								"description": "The tags to add. Each is trimmed and lowercased, and runs of spaces become one space. A save can have at most 10 tags."
 							}
 						}
 					}
@@ -5062,19 +5072,23 @@
 					"tags"
 				],
 				"x-fern-sdk-method-name": "set",
+				"description": "Replaces all of a save's tags. Send an empty array to remove them all.",
 				"operationId": "put_SaveTagsSet",
 				"parameters": [
 					{
 						"schema": {
 							"type": "string",
-							"format": "uuid"
+							"format": "uuid",
+							"description": "The ID of the save."
 						},
 						"required": true,
+						"description": "The ID of the save.",
 						"name": "saveId",
 						"in": "path"
 					}
 				],
 				"requestBody": {
+					"required": true,
 					"content": {
 						"application/json": {
 							"schema": {
@@ -5087,7 +5101,8 @@
 											"minLength": 1,
 											"maxLength": 100
 										},
-										"maxItems": 10
+										"maxItems": 10,
+										"description": "The save's new tags, replacing all of its current tags. An empty array removes every tag."
 									}
 								},
 								"required": [
@@ -5100,6 +5115,148 @@
 				"responses": {
 					"200": {
 						"description": "Tags for the save set successfully",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "array",
+									"items": {
+										"type": "string",
+										"minLength": 1,
+										"maxLength": 100
+									},
+									"maxItems": 10
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Invalid request data",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"error": {
+											"type": "string"
+										},
+										"code": {
+											"type": "string"
+										},
+										"details": {}
+									},
+									"required": [
+										"error"
+									]
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Unauthorized",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"error": {
+											"type": "string"
+										},
+										"code": {
+											"type": "string"
+										},
+										"details": {}
+									},
+									"required": [
+										"error"
+									]
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Save not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"error": {
+											"type": "string"
+										},
+										"code": {
+											"type": "string"
+										},
+										"details": {}
+									},
+									"required": [
+										"error"
+									]
+								}
+							}
+						}
+					},
+					"500": {
+						"description": "Server error",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"error": {
+											"type": "string"
+										},
+										"code": {
+											"type": "string"
+										},
+										"details": {}
+									},
+									"required": [
+										"error"
+									]
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		"/saves/{saveId}/tags/{tagName}": {
+			"delete": {
+				"tags": [
+					"Saves"
+				],
+				"summary": "Remove a tag from a specific save by ID",
+				"x-fern-sdk-group-name": [
+					"saves",
+					"tags"
+				],
+				"x-fern-sdk-method-name": "delete",
+				"x-forge-require-confirmation": "This removes the tag from this save. The save's other tags, and the tag on other saves, are not changed.",
+				"operationId": "delete_SaveTagsDelete",
+				"parameters": [
+					{
+						"schema": {
+							"type": "string",
+							"format": "uuid"
+						},
+						"required": true,
+						"name": "saveId",
+						"in": "path"
+					},
+					{
+						"schema": {
+							"type": "string",
+							"minLength": 1,
+							"maxLength": 200
+						},
+						"required": true,
+						"name": "tagName",
+						"in": "path"
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "Tag removed; returns the tags remaining on the save. Removing a tag the save does not carry is a no-op.",
 						"content": {
 							"application/json": {
 								"schema": {

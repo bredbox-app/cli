@@ -52,6 +52,7 @@ export const saves: CommandGroup = {
 					type: "string",
 					required: false,
 					array: true,
+					description: "Tags for the new save; at most 10.",
 				},
 				{
 					name: "background",
@@ -744,6 +745,8 @@ export const saves: CommandGroup = {
 				{
 					name: "add",
 					summary: "Add tags to a specific save by ID",
+					description:
+						"Adds tags to a save and keeps the tags it already has. Tags the save already has are ignored. Fails with 400 if the save would have more than 10 tags.",
 					method: "POST",
 					path: "/saves/{saveId}/tags",
 					args: [
@@ -754,6 +757,7 @@ export const saves: CommandGroup = {
 							type: "string",
 							required: true,
 							positional: true,
+							description: "The ID of the save.",
 						},
 						{
 							name: "tag",
@@ -762,17 +766,46 @@ export const saves: CommandGroup = {
 							type: "string",
 							positional: true,
 							array: true,
-							required: false,
+							required: true,
 							description:
-								"The items to send as the JSON array body.",
+								"The tags to add. Each is trimmed and lowercased, and runs of spaces become one space. A save can have at most 10 tags.",
 						},
 					],
 					body: "array",
 					response: "json",
 				},
 				{
+					name: "delete",
+					summary: "Remove a tag from a specific save by ID",
+					method: "DELETE",
+					path: "/saves/{saveId}/tags/{tagName}",
+					args: [
+						{
+							name: "save-id",
+							wire: "saveId",
+							in: "path",
+							type: "string",
+							required: true,
+							positional: true,
+						},
+						{
+							name: "tag-name",
+							wire: "tagName",
+							in: "path",
+							type: "string",
+							required: true,
+							positional: true,
+						},
+					],
+					body: "none",
+					response: "json",
+					confirmation:
+						"This removes the tag from this save. The save's other tags, and the tag on other saves, are not changed.",
+				},
+				{
 					name: "list",
 					summary: "Get all tags for a specific save by ID",
+					description: "Lists a save's tags in alphabetical order.",
 					method: "GET",
 					path: "/saves/{saveId}/tags",
 					args: [
@@ -783,6 +816,7 @@ export const saves: CommandGroup = {
 							type: "string",
 							required: true,
 							positional: true,
+							description: "The ID of the save.",
 						},
 					],
 					body: "none",
@@ -791,6 +825,8 @@ export const saves: CommandGroup = {
 				{
 					name: "set",
 					summary: "Set all tags for a specific save by ID",
+					description:
+						"Replaces all of a save's tags. Send an empty array to remove them all.",
 					method: "PUT",
 					path: "/saves/{saveId}/tags",
 					args: [
@@ -801,6 +837,7 @@ export const saves: CommandGroup = {
 							type: "string",
 							required: true,
 							positional: true,
+							description: "The ID of the save.",
 						},
 						{
 							name: "tag",
@@ -809,6 +846,8 @@ export const saves: CommandGroup = {
 							type: "string",
 							required: true,
 							array: true,
+							description:
+								"The save's new tags, replacing all of its current tags. An empty array removes every tag.",
 							positional: true,
 						},
 					],
