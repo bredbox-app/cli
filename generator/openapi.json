@@ -937,7 +937,7 @@
 					{
 						"schema": {
 							"type": "string",
-							"minLength": 3,
+							"minLength": 2,
 							"description": "Search query string"
 						},
 						"required": true,
