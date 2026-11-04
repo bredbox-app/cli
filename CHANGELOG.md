@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.5.0](https://github.com/bredbox-app/cli/compare/cli-v0.4.0...cli-v0.5.0) (2026-11-04)
+
+
+### Features
+
+* add bbx CLI alias ([#8](https://github.com/bredbox-app/cli/issues/8)) ([9afd3f3](https://github.com/bredbox-app/cli/commit/9afd3f3b98ff8a315e51f2941baea589cd6d2ba7))
+
+
+### Bug Fixes
+
+* Sync with live API ([#7](https://github.com/bredbox-app/cli/issues/7)) ([a0320a8](https://github.com/bredbox-app/cli/commit/a0320a834d873df48154d66931675bb84da6e3e8))
+
 ## [0.4.0](https://github.com/bredbox-app/cli/compare/cli-v0.3.0...cli-v0.4.0) (2026-10-21)
 
 
