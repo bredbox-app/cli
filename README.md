@@ -4,7 +4,7 @@ by [Nicholas C. Zakas](https://humanwhocodes.com)
 
 ## Description
 
-`bredbox` is a command line interface for the [Bredbox](https://bredbox.app) API. Every operation of the [Bredbox REST API v2](https://api.bredbox.app/v2/docs) is a command, generated from the API's OpenAPI document with [Cloudflare Forge](https://github.com/cloudflare/forge), so the CLI stays in step with the API.
+`bbx` (also available as `bredbox`) is a command line interface for the [Bredbox](https://bredbox.app) API. Every operation of the [Bredbox REST API v2](https://api.bredbox.app/v2/docs) is a command, generated from the API's OpenAPI document with [Cloudflare Forge](https://github.com/cloudflare/forge), so the CLI stays in step with the API.
 
 Responses are JSON: indented when written to a terminal, one line when piped, which suits scripts and agents alike.
 
@@ -31,16 +31,16 @@ Node.js 22.18 or later is required.
 Create an API token in your Bredbox account settings, then save it:
 
 ```shell
-bredbox auth login
+bbx auth login
 ```
 
 The command asks for the token without showing what you type. In a script, pipe the token in instead:
 
 ```shell
-bredbox auth login < token.txt
+bbx auth login < token.txt
 ```
 
-The token is checked against the API and saved in a config file (`~/.config/bredbox/config.json`, or `%APPDATA%\bredbox\config.json` on Windows). You can instead set the `BREDBOX_TOKEN` environment variable, which takes precedence over the saved token. `bredbox auth status` shows which one is in use, and `bredbox auth logout` deletes the saved token.
+The token is checked against the API and saved in a config file (`~/.config/bredbox/config.json`, or `%APPDATA%\bredbox\config.json` on Windows). You can instead set the `BREDBOX_TOKEN` environment variable, which takes precedence over the saved token. `bbx auth status` shows which one is in use, and `bbx auth logout` deletes the saved token.
 
 There is no `--token` flag: a token on the command line is visible to other processes and is saved in your shell history.
 
@@ -49,35 +49,35 @@ There is no `--token` flag: a token on the command line is visible to other proc
 Commands follow the shape of the API: a group, sometimes a subgroup, then an operation.
 
 ```shell
-bredbox saves list --filter inbox --type article
-bredbox saves add --url https://example.com/article --tag reading
-bredbox saves get <save-id>
-bredbox saves content <save-id> --format text
-bredbox saves tags add <save-id> one two
-bredbox collections items add <collection-id> --save-id <save-id>
-bredbox tags rename old-name --name new-name
-bredbox me get
+bbx saves list --filter inbox --type article
+bbx saves add --url https://example.com/article --tag reading
+bbx saves get <save-id>
+bbx saves content <save-id> --format text
+bbx saves tags add <save-id> one two
+bbx collections items add <collection-id> --save-id <save-id>
+bbx tags rename old-name --name new-name
+bbx me get
 ```
 
-Run `bredbox --help` for the groups, `bredbox saves --help` for the commands in a group, and `bredbox saves list --help` for the options of a command. Every command's help shows the HTTP request it sends.
+Run `bbx --help` for the groups, `bbx saves --help` for the commands in a group, and `bbx saves list --help` for the options of a command. Every command's help shows the HTTP request it sends.
 
-Add `--json` to any help for a machine-readable description, for scripts and agents. `bredbox --help --json` describes every group and command at once. `bredbox saves tags add --help --json` describes one command: its HTTP request, and each argument's type, whether it is positional or required, its choices and default, and the API field it is sent as, which is also its key in `--body`.
+Add `--json` to any help for a machine-readable description, for scripts and agents. `bbx --help --json` describes every group and command at once. `bbx saves tags add --help --json` describes one command: its HTTP request, and each argument's type, whether it is positional or required, its choices and default, and the API field it is sent as, which is also its key in `--body`.
 
 - **Path parameters** are positionals, in the order they appear in the URL.
 - **Lists of values** that a command is about, such as the tags of `saves tags add` and `saves tags set`, take the words after the path parameters.
-- **Positionals** may also be given as flags of the same name, in any order: `bredbox saves tags add --save-id <save-id> --tag one --tag two`. Words fill the positionals not given as flags. Give each value only one way.
+- **Positionals** may also be given as flags of the same name, in any order: `bbx saves tags add --save-id <save-id> --tag one --tag two`. Words fill the positionals not given as flags. Give each value only one way.
 - **Query parameters and body fields** are flags, in kebab-case: `per_page` is `--per-page`. Repeat a flag for an array value. Boolean flags take `--no-` to pass false: `--no-is-favorite`.
 - **Nested objects** are given as JSON: `--location '{"kind":"pdf","page":3}'`.
 - **`@file`** reads a value from a file: `--html @page.html`, `--body @request.json`.
 - **`--body`** sends raw JSON as the body, with any flags merged over it.
-- **Files** are uploaded from a path: `bredbox imports create --file bookmarks.html`.
+- **Files** are uploaded from a path: `bbx imports create --file bookmarks.html`.
 
 ### Output
 
 On a terminal, JSON responses are formatted for reading: lists print as tables, with a note on standard error when there are more pages, and single objects print as aligned fields, with dates shown relative to now. When piped or written with `--output`, they print as JSON, so scripts and agents always get JSON.
 
 ```shell
-$ bredbox saves list
+$ bbx saves list
 ID                                    TITLE                       SITE NAME   TAGS        CREATED AT
 0b6c1f7e-1c2d-4e5f-8a9b-0c1d2e3f4a5b  Understanding the JavaScr…  Human Who…  javascrip…  3 days ago
 Page 1 of 5 (93 total). Pass --page 2 for the next page.
@@ -88,7 +88,7 @@ Page 1 of 5 (93 total). Pass --page 2 for the next page.
 Text responses, such as a save's content, print as-is. Binary responses, such as an export archive, go to `--output <file>`:
 
 ```shell
-bredbox exports download <export-id> --output export.zip
+bbx exports download <export-id> --output export.zip
 ```
 
 `--dry-run` prints the request that would be sent, with the token masked, without sending it.
@@ -98,7 +98,7 @@ bredbox exports download <export-id> --output export.zip
 Commands that delete something ask for confirmation on a terminal. Without a terminal they refuse, so scripts pass `--force` (or `-f`) on purpose:
 
 ```shell
-bredbox saves delete <save-id> --force
+bbx saves delete <save-id> --force
 ```
 
 ### Exit codes
