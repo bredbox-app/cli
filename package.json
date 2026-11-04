@@ -4,6 +4,7 @@
   "description": "Command line interface for the Bredbox API",
   "type": "module",
   "bin": {
+    "bbx": "dist/bin.js",
     "bredbox": "dist/bin.js"
   },
   "files": [
