@@ -353,6 +353,42 @@ describe("bredbox saves list", () => {
 		]);
 	});
 
+	it("should fit search results to the terminal without mark tags", async () => {
+		const { io, text, err } = fakeIo({ tty: true });
+		const { fetch } = fakeFetch(() =>
+			json(200, {
+				items: [
+					{
+						snippet:
+							"…the <mark>sourdough</mark> starter was kept warm overnight and fed with rye flour before baking…",
+						save: {
+							id: "3f2b8c1e-9a4d-4e6f-8b2a-1c3d5e7f9a0b",
+							title: "A very long article title about the history of bread baking",
+						},
+					},
+				],
+			}),
+		);
+
+		io.stdout.columns = 80;
+
+		const code = await run(["saves", "search", "--q", "sourdough"], {
+			io,
+			env: { ...env, NO_COLOR: "1" },
+			configPath,
+			fetch,
+		});
+		const lines = text().trimEnd().split("\n");
+
+		expect(code).toBe(0);
+		expect(lines).toEqual([
+			"ID                                    TITLE                 SNIPPET",
+			"3f2b8c1e-9a4d-4e6f-8b2a-1c3d5e7f9a0b  A very long article…  …the sourdough star…",
+		]);
+		expect(lines.every(line => line.length <= 80)).toBe(true);
+		expect(err).toEqual([]);
+	});
+
 	it("should print JSON on a terminal with --json", async () => {
 		const { io, out } = fakeIo({ tty: true });
 		const { fetch } = fakeFetch(() => json(200, { items: [] }));

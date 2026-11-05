@@ -142,8 +142,8 @@ describe("formatHuman()", () => {
 			expect(text).toBe("AT\n2026-99-99T99:99:99Z\n");
 		});
 
-		it("should narrow the last columns first to fit the width, never cutting ids", () => {
-			const { text } = formatHuman(
+		it("should share the width among columns, never cutting ids", () => {
+			const { text, notes } = formatHuman(
 				[
 					{
 						id: "0123456789-abcdef",
@@ -151,14 +151,149 @@ describe("formatHuman()", () => {
 						site: "A long site name",
 					},
 				],
-				{ columns: ["id", "title", "site"], width: 50, now },
+				{ columns: ["id", "title", "site"], width: 60, now },
 			);
 			const lines = text.trimEnd().split("\n");
 
 			expect(lines).toEqual([
-				"ID                 TITLE                SITE",
-				"0123456789-abcdef  A rather long titl…  A long si…",
+				"ID                 TITLE                    SITE",
+				"0123456789-abcdef  A rather long title fo…  A long site name",
 			]);
+			expect(lines.every(line => line.length <= 60)).toBe(true);
+			expect(notes).toEqual([]);
+		});
+
+		it("should share space evenly between long columns", () => {
+			const { text } = formatHuman(
+				[
+					{
+						id: "0123456789-abcdef",
+						title: "A rather long title for a save of an article",
+						snippet:
+							"…a snippet of the text of the article that is longer still…",
+					},
+				],
+				{ columns: ["id", "title", "snippet"], width: 61, now },
+			);
+
+			expect(text).toBe(
+				[
+					"ID                 TITLE                 SNIPPET",
+					"0123456789-abcdef  A rather long title…  …a snippet of the t…",
+					"",
+				].join("\n"),
+			);
+		});
+
+		it("should hide the last columns rather than cut columns too narrow, and note them", () => {
+			const { text, notes } = formatHuman(
+				{
+					items: [
+						{
+							id: "3f2b8c1e-9a4d-4e6f-8b2a-1c3d5e7f9a0b",
+							title: "A very long article title about the history of bread",
+							site_name: "The Example Gazette",
+							tags: ["bread", "baking"],
+							created_at: "2026-10-16T12:00:00Z",
+						},
+					],
+				},
+				{
+					columns: ["id", "title", "site_name", "tags", "created_at"],
+					width: 91,
+					now,
+				},
+			);
+			const lines = text.trimEnd().split("\n");
+
+			expect(lines).toEqual([
+				"ID                                    TITLE                             SITE NAME",
+				"3f2b8c1e-9a4d-4e6f-8b2a-1c3d5e7f9a0b  A very long article title about…  The Example Gazette",
+			]);
+			expect(lines.every(line => line.length <= 91)).toBe(true);
+			expect(notes).toEqual([
+				"Hidden to fit the terminal: TAGS, CREATED AT. Pass --json to see every field.",
+			]);
+		});
+
+		it("should show every column when they fit", () => {
+			const { text, notes } = formatHuman(
+				[
+					{
+						id: "a1",
+						title: "Bread",
+						tags: ["x"],
+						at: "2026-10-16T12:00:00Z",
+					},
+				],
+				{ columns: ["id", "title", "tags", "at"], width: 40, now },
+			);
+
+			expect(text).toBe(
+				"ID  TITLE  TAGS  AT\na1  Bread  x     3 days ago\n",
+			);
+			expect(notes).toEqual([]);
+		});
+
+		it("should take out the tags that mark search matches", () => {
+			const { text } = formatHuman(
+				{
+					items: [
+						{
+							snippet:
+								"…the <mark>sourdough</mark> and <mark>rye</mark>…",
+							save: { title: "Bread" },
+						},
+					],
+				},
+				{ columns: ["save.title", "snippet"], now },
+			);
+
+			expect(text).toBe(
+				"TITLE  SNIPPET\nBread  …the sourdough and rye…\n",
+			);
+		});
+
+		it("should embolden search matches with color, ending the bold where a match is cut", () => {
+			const { text } = formatHuman(
+				[{ snippet: "a <mark>sourdough</mark> starter" }],
+				{ columns: ["snippet"], width: 8, color: true, now },
+			);
+
+			expect(text).toBe(
+				"\u001B[1mSNIPPET\u001B[22m\na \u001B[1msourdou\u001B[22m…\n",
+			);
+		});
+
+		it("should leave text that only looks like a mark tag alone", () => {
+			const { text } = formatHuman([{ title: "Using <mark> in HTML" }], {
+				now,
+			});
+
+			expect(text).toBe("TITLE\nUsing <mark> in HTML\n");
+		});
+
+		it("should measure wide characters as two columns", () => {
+			const { text } = formatHuman(
+				[
+					{
+						id: "a1",
+						title: "東京のパン屋 🍞 ガイドブック",
+						site: "x",
+					},
+					{ id: "a2", title: "Bread", site: "y" },
+				],
+				{ columns: ["id", "title", "site"], width: 30, now },
+			);
+
+			expect(text).toBe(
+				[
+					"ID  TITLE                 SITE",
+					"a1  東京のパン屋 🍞 ガ…   x",
+					"a2  Bread                 y",
+					"",
+				].join("\n"),
+			);
 		});
 
 		it("should stop narrowing at the narrowest a column goes", () => {
@@ -284,6 +419,25 @@ describe("formatHuman()", () => {
 					"",
 				].join("\n"),
 			);
+		});
+
+		it("should note columns hidden from a table in a field", () => {
+			const { notes } = formatHuman(
+				{
+					parts: [
+						{
+							id: "p1",
+							title: "A rather long title for a part",
+							kind: "A long kind of part",
+						},
+					],
+				},
+				{ width: 40, now },
+			);
+
+			expect(notes).toEqual([
+				"Hidden to fit the terminal: KIND. Pass --json to see every field.",
+			]);
 		});
 
 		it("should show a list of objects in a field as a table", () => {
