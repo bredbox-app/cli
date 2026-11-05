@@ -58,6 +58,30 @@ const GAP = "  ";
 const MIN_WIDTH = 10;
 
 /**
+ * The narrowest a column is truncated to while there are columns after it
+ * that can be hidden to make room.
+ */
+const SHARE_WIDTH = 20;
+
+/**
+ * Text that a search marks as matching: `<mark>bread</mark>`.
+ */
+const MARK = /<mark>(.*?)<\/mark>/gsu;
+
+/**
+ * Characters that take no space on a terminal: combining marks and
+ * variation selectors, controls, and format characters such as joiners.
+ */
+const ZERO_WIDTH = /^[\p{Mn}\p{Me}\p{Cc}\p{Cf}]$/u;
+
+/**
+ * Characters that take two columns on a terminal: East Asian wide and
+ * full-width characters, and emoji.
+ */
+const DOUBLE_WIDTH =
+	/^[\u1100-\u115F\u2E80-\u303E\u3041-\u33FF\u3400-\u4DBF\u4E00-\u9FFF\uA000-\uA4CF\uAC00-\uD7A3\uF900-\uFAFF\uFE30-\uFE4F\uFF00-\uFF60\uFFE0-\uFFE6\u{1F300}-\u{1F64F}\u{1F680}-\u{1F6FF}\u{1F900}-\u{1F9FF}\u{20000}-\u{3FFFD}]$/u;
+
+/**
  * The most columns taken from the rows when the command gives none.
  */
 const MAX_COLUMNS = 6;
@@ -193,13 +217,65 @@ function formatValue(value: unknown, now: Date, exact = false): string {
 }
 
 /**
- * Formats a value for a cell, on one line.
+ * The text of a cell of a table, and the parts of it a search matched.
+ */
+interface Cell {
+	/** The text, on one line. */
+	text: string;
+
+	/** Where the matches start and end in the text. */
+	marks: [start: number, end: number][];
+}
+
+/**
+ * Formats a value for a cell, on one line, taking `<mark>` tags out of the
+ * text and noting where they were.
  * @param value The value.
  * @param now The time dates are relative to.
- * @returns The text.
+ * @returns The cell.
  */
-function cell(value: unknown, now: Date): string {
-	return formatValue(value, now).replace(/\s+/gu, " ").trim();
+function cell(value: unknown, now: Date): Cell {
+	const raw = formatValue(value, now).replace(/\s+/gu, " ").trim();
+	const marks: Cell["marks"] = [];
+	let text = "";
+	let last = 0;
+
+	for (const match of raw.matchAll(MARK)) {
+		text += raw.slice(last, match.index);
+		marks.push([text.length, text.length + match[1].length]);
+		text += match[1];
+		last = match.index + match[0].length;
+	}
+
+	return { text: text + raw.slice(last), marks };
+}
+
+/**
+ * Measures how many columns of a terminal a character takes.
+ * @param char The character.
+ * @returns 0, 1 or 2.
+ */
+function charWidth(char: string): number {
+	if (ZERO_WIDTH.test(char)) {
+		return 0;
+	}
+
+	return DOUBLE_WIDTH.test(char) ? 2 : 1;
+}
+
+/**
+ * Measures how many columns of a terminal text takes.
+ * @param text The text.
+ * @returns The width.
+ */
+function textWidth(text: string): number {
+	let width = 0;
+
+	for (const char of text) {
+		width += charWidth(char);
+	}
+
+	return width;
 }
 
 /**
@@ -236,13 +312,79 @@ function bold(text: string, color: boolean): string {
 }
 
 /**
- * Cuts text to a width, ending it with an ellipsis if it was cut.
+ * Finds how much of a text fits in a width, leaving a column for an
+ * ellipsis if not all of it does.
  * @param text The text.
  * @param width The width.
- * @returns The text, no wider than `width`.
+ * @returns How many code units of the text to keep, which is all of them
+ *      if it fits.
  */
-function truncate(text: string, width: number): string {
-	return text.length <= width ? text : `${text.slice(0, width - 1)}…`;
+function fitting(text: string, width: number): number {
+	if (textWidth(text) <= width) {
+		return text.length;
+	}
+
+	let used = 0;
+	let kept = 0;
+
+	for (const char of text) {
+		used += charWidth(char);
+
+		if (used > width - 1) {
+			break;
+		}
+
+		kept += char.length;
+	}
+
+	return kept;
+}
+
+/**
+ * Emboldens the parts of a cell a search matched, as far as `end`.
+ * @param content The cell.
+ * @param end Where the text is cut.
+ * @param color Whether color is on.
+ * @returns The text before `end`, with escapes if color is on.
+ */
+function highlight(content: Cell, end: number, color: boolean): string {
+	let text = "";
+	let last = 0;
+
+	for (const [start, stop] of content.marks) {
+		if (!color || start >= end) {
+			break;
+		}
+
+		text += content.text.slice(last, start);
+		text += bold(content.text.slice(start, Math.min(stop, end)), true);
+		last = Math.min(stop, end);
+	}
+
+	return text + content.text.slice(last, end);
+}
+
+/**
+ * Shares space out among columns: each gets as much as it needs or an
+ * equal share of what the narrower ones leave, whichever is less.
+ * @param needs The width each column needs.
+ * @param space The space to share.
+ * @returns The width of each column.
+ */
+function share(needs: readonly number[], space: number): number[] {
+	const order = needs.map((_, i) => i).sort((a, b) => needs[a] - needs[b]);
+	const widths = [...needs];
+	let left = space;
+
+	order.forEach((index, n) => {
+		widths[index] = Math.min(
+			needs[index],
+			Math.floor(left / (order.length - n)),
+		);
+		left -= widths[index];
+	});
+
+	return widths;
 }
 
 /**
@@ -288,76 +430,104 @@ function isIdColumn(column: string): boolean {
 }
 
 /**
- * Formats rows as a table.
+ * Formats rows as a table. On a terminal, the columns share its width:
+ * ids keep theirs, so that they can be copied, and if the other columns
+ * would be cut too narrow, the last of them are hidden.
  * @param rows The rows.
- * @param columns The columns, as dotted paths into each row.
+ * @param columns The columns, as dotted paths into each row, most
+ *      important first.
  * @param options How to format the table.
- * @returns The lines of the table.
+ * @returns The lines of the table, and the headings of hidden columns.
  */
 function table(
 	rows: readonly Record<string, unknown>[],
 	columns: readonly string[],
 	options: Required<Pick<HumanOptions, "color" | "now">> &
 		Pick<HumanOptions, "width">,
-): string[] {
+): { lines: string[]; hidden: string[] } {
 	const headings = columns.map(column =>
 		label(column.split(".").pop() ?? column).toUpperCase(),
 	);
 	const cells = rows.map(row =>
 		columns.map(column => cell(pick(row, column), options.now)),
 	);
-	const widths = headings.map((heading, i) =>
-		Math.max(heading.length, ...cells.map(line => line[i].length)),
+	const needs = headings.map((heading, i) =>
+		Math.max(
+			textWidth(heading),
+			...cells.map(line => textWidth(line[i].text)),
+		),
 	);
+	const widths = [...needs];
+	const shown = columns.map((_, i) => i);
 
 	if (options.width !== undefined) {
-		const total = () =>
-			widths.reduce((sum, width) => sum + width, 0) +
-			GAP.length * (widths.length - 1);
+		for (;;) {
+			const flexible = shown.filter(i => !isIdColumn(columns[i]));
+			const space =
+				options.width -
+				GAP.length * (shown.length - 1) -
+				shown
+					.filter(i => isIdColumn(columns[i]))
+					.reduce((sum, i) => sum + needs[i], 0);
+			const shares = share(
+				flexible.map(i => needs[i]),
+				space,
+			);
+			const cramped = shares.some(
+				(width, n) => width < Math.min(needs[flexible[n]], SHARE_WIDTH),
+			);
 
-		// Columns come in order of importance, so narrow the last ones
-		// first, as far as they go, until the table fits.
-		for (let i = widths.length - 1; i >= 0; i--) {
-			const excess = total() - options.width;
-
-			if (excess <= 0) {
-				break;
-			}
-
-			if (isIdColumn(columns[i])) {
+			// Columns come in order of importance, so rather than cut
+			// every column short, hide the last one and share again.
+			if (cramped && flexible.length > 1) {
+				shown.splice(shown.indexOf(flexible[flexible.length - 1]), 1);
 				continue;
 			}
 
-			const floor = Math.max(MIN_WIDTH, headings[i].length);
-
-			widths[i] = Math.max(floor, widths[i] - excess);
+			flexible.forEach((i, n) => {
+				widths[i] = Math.max(shares[n], Math.min(needs[i], MIN_WIDTH));
+			});
+			break;
 		}
 	}
 
-	const line = (values: string[], style = (text: string) => text) =>
-		values
-			.map((value, i) => {
-				const text = truncate(value, widths[i]);
+	const line = (contents: Cell[], color: boolean) =>
+		shown
+			.map((i, n) => {
+				const content = contents[i];
+				const kept = fitting(content.text, widths[i]);
+				const cut = kept < content.text.length;
+				const text = `${highlight(content, kept, color)}${cut ? "…" : ""}`;
+				const used =
+					textWidth(content.text.slice(0, kept)) + (cut ? 1 : 0);
 				const padding =
-					i === values.length - 1
-						? ""
-						: " ".repeat(widths[i] - text.length);
+					n === shown.length - 1 ? "" : " ".repeat(widths[i] - used);
 
-				return style(text) + padding;
+				return text + padding;
 			})
 			.join(GAP)
 			.trimEnd();
 
-	return [
-		line(headings, text => bold(text, options.color)),
-		...cells.map(values => line(values)),
-	];
+	return {
+		lines: [
+			line(
+				headings.map(text => ({ text, marks: [[0, text.length]] })),
+				options.color,
+			),
+			...cells.map(contents => line(contents, options.color)),
+		],
+		hidden: columns
+			.map((_, i) => i)
+			.filter(i => !shown.includes(i))
+			.map(i => headings[i]),
+	};
 }
 
 /**
  * Formats an object as aligned fields, nesting objects below their labels.
  * @param object The object.
  * @param options How to format it.
+ * @param hidden Where to add the headings of columns hidden from tables.
  * @param indent The indent of each line.
  * @returns The lines.
  */
@@ -365,6 +535,7 @@ function fields(
 	object: Record<string, unknown>,
 	options: Required<Pick<HumanOptions, "color" | "now">> &
 		Pick<HumanOptions, "width">,
+	hidden: Set<string>,
 	indent = "",
 ): string[] {
 	const entries = Object.entries(object);
@@ -376,23 +547,23 @@ function fields(
 
 		if (isObject(value) && Object.keys(value).length > 0) {
 			lines.push(`${indent}${name}`);
-			lines.push(...fields(value, options, `${indent}  `));
+			lines.push(...fields(value, options, hidden, `${indent}  `));
 			continue;
 		}
 
 		if (Array.isArray(value) && value.length > 0 && value.every(isObject)) {
 			const rows = value as Record<string, unknown>[];
+			const nested = table(rows, columnsOf(rows), {
+				...options,
+				width:
+					options.width === undefined
+						? undefined
+						: options.width - indent.length - 2,
+			});
 
 			lines.push(`${indent}${name}`);
-			lines.push(
-				...table(rows, columnsOf(rows), {
-					...options,
-					width:
-						options.width === undefined
-							? undefined
-							: options.width - indent.length - 2,
-				}).map(row => `${indent}  ${row}`),
-			);
+			lines.push(...nested.lines.map(row => `${indent}  ${row}`));
+			nested.hidden.forEach(heading => hidden.add(heading));
 			continue;
 		}
 
@@ -453,6 +624,7 @@ export function formatHuman(
 		width: options.width,
 	};
 	const notes: string[] = [];
+	const hidden = new Set<string>();
 	let rows: unknown[] | undefined;
 
 	if (Array.isArray(data)) {
@@ -471,7 +643,7 @@ export function formatHuman(
 
 	if (rows === undefined) {
 		lines = isObject(data)
-			? fields(data, settings)
+			? fields(data, settings, hidden)
 			: [formatValue(data, settings.now, true)];
 	} else if (rows.length === 0) {
 		lines = [];
@@ -482,9 +654,18 @@ export function formatHuman(
 				? options.columns
 				: columnsOf(rows);
 
-		lines = table(rows, columns, settings);
+		const result = table(rows, columns, settings);
+
+		lines = result.lines;
+		result.hidden.forEach(heading => hidden.add(heading));
 	} else {
 		lines = rows.map(row => formatValue(row, settings.now, true));
+	}
+
+	if (hidden.size > 0) {
+		notes.push(
+			`Hidden to fit the terminal: ${[...hidden].join(", ")}. Pass --json to see every field.`,
+		);
 	}
 
 	return {
