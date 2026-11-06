@@ -12699,7 +12699,7 @@
 				"summary": "Create webhook",
 				"x-fern-sdk-group-name": "webhooks",
 				"x-fern-sdk-method-name": "create",
-				"description": "Creates a webhook for the authenticated user. Requires `webhooks:write` scope and the `developer` entitlement.",
+				"description": "Creates a webhook for the authenticated user. Requires `webhooks:write` scope and the `developer` entitlement. Deliveries are signed following Standard Webhooks. Omit `secret` to have Bredbox generate one, or pass your own `whsec_` secret (base64 of 24 to 64 random bytes). Only this response and the rotate-secret response include the full `secret`.",
 				"operationId": "post_WebhooksCreate",
 				"requestBody": {
 					"content": {
@@ -12717,9 +12717,7 @@
 										"format": "uri"
 									},
 									"secret": {
-										"type": "string",
-										"minLength": 16,
-										"maxLength": 256
+										"type": "string"
 									},
 									"subscription_mode": {
 										"type": "string",
@@ -12739,7 +12737,6 @@
 								"required": [
 									"name",
 									"url",
-									"secret",
 									"subscription_mode",
 									"event_types"
 								],
@@ -12826,6 +12823,9 @@
 										"updated_at": {
 											"type": "string",
 											"format": "date-time"
+										},
+										"secret": {
+											"type": "string"
 										}
 									},
 									"required": [
@@ -12841,7 +12841,8 @@
 										"disabled_at",
 										"secret_rotated_at",
 										"created_at",
-										"updated_at"
+										"updated_at",
+										"secret"
 									]
 								}
 							}
@@ -13298,9 +13299,7 @@
 										"format": "uri"
 									},
 									"secret": {
-										"type": "string",
-										"minLength": 16,
-										"maxLength": 256
+										"type": "string"
 									},
 									"subscription_mode": {
 										"type": "string",
@@ -13610,6 +13609,243 @@
 										"ok",
 										"id",
 										"deleted_at"
+									]
+								}
+							}
+						}
+					},
+					"400": {
+						"description": "Invalid request",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"error": {
+											"type": "string"
+										},
+										"code": {
+											"type": "string"
+										},
+										"details": {}
+									},
+									"required": [
+										"error"
+									]
+								}
+							}
+						}
+					},
+					"401": {
+						"description": "Unauthorized",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"error": {
+											"type": "string"
+										},
+										"code": {
+											"type": "string"
+										},
+										"details": {}
+									},
+									"required": [
+										"error"
+									]
+								}
+							}
+						}
+					},
+					"403": {
+						"description": "Forbidden",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"error": {
+											"type": "string"
+										},
+										"code": {
+											"type": "string"
+										},
+										"details": {}
+									},
+									"required": [
+										"error"
+									]
+								}
+							}
+						}
+					},
+					"404": {
+						"description": "Webhook not found",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"error": {
+											"type": "string"
+										},
+										"code": {
+											"type": "string"
+										},
+										"details": {}
+									},
+									"required": [
+										"error"
+									]
+								}
+							}
+						}
+					},
+					"500": {
+						"description": "Server error",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"error": {
+											"type": "string"
+										},
+										"code": {
+											"type": "string"
+										},
+										"details": {}
+									},
+									"required": [
+										"error"
+									]
+								}
+							}
+						}
+					}
+				}
+			}
+		},
+		"/webhooks/{webhookId}/rotate-secret": {
+			"post": {
+				"tags": [
+					"Webhooks"
+				],
+				"summary": "Rotate a webhook secret",
+				"x-fern-sdk-group-name": "webhooks",
+				"x-fern-sdk-method-name": "rotateSecret",
+				"description": "Replaces the webhook's signing secret with a newly generated `whsec_` secret and returns it. The old secret stops signing deliveries immediately. This is the only response other than create that includes the full `secret`. To set a secret of your own instead, send it as `secret` to PATCH /v2/webhooks/{webhookId}. Requires `webhooks:write` scope and the `developer` entitlement.",
+				"operationId": "post_WebhooksRotateSecret",
+				"parameters": [
+					{
+						"schema": {
+							"type": "string",
+							"format": "uuid"
+						},
+						"required": true,
+						"name": "webhookId",
+						"in": "path"
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "Secret rotated",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"id": {
+											"type": "string",
+											"format": "uuid"
+										},
+										"name": {
+											"type": "string"
+										},
+										"url": {
+											"type": "string",
+											"format": "uri"
+										},
+										"status": {
+											"type": "string",
+											"enum": [
+												"active",
+												"disabled"
+											]
+										},
+										"subscription_mode": {
+											"type": "string",
+											"enum": [
+												"explicit",
+												"all_events"
+											]
+										},
+										"event_types": {
+											"type": "array",
+											"items": {
+												"type": "string"
+											}
+										},
+										"secret_configured": {
+											"type": "boolean",
+											"enum": [
+												true
+											]
+										},
+										"secret_last_four": {
+											"type": "string"
+										},
+										"disabled_reason": {
+											"type": [
+												"string",
+												"null"
+											],
+											"enum": [
+												"user_disabled",
+												"billing_entitlement_revoked",
+												"endpoint_gone",
+												"repeated_failures"
+											]
+										},
+										"disabled_at": {
+											"type": [
+												"string",
+												"null"
+											],
+											"format": "date-time"
+										},
+										"secret_rotated_at": {
+											"type": "string",
+											"format": "date-time"
+										},
+										"created_at": {
+											"type": "string",
+											"format": "date-time"
+										},
+										"updated_at": {
+											"type": "string",
+											"format": "date-time"
+										},
+										"secret": {
+											"type": "string"
+										}
+									},
+									"required": [
+										"id",
+										"name",
+										"url",
+										"status",
+										"subscription_mode",
+										"event_types",
+										"secret_configured",
+										"secret_last_four",
+										"disabled_reason",
+										"disabled_at",
+										"secret_rotated_at",
+										"created_at",
+										"updated_at",
+										"secret"
 									]
 								}
 							}
