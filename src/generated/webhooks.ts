@@ -15,7 +15,7 @@ export const webhooks: CommandGroup = {
 			name: "create",
 			summary: "Create webhook",
 			description:
-				"Creates a webhook for the authenticated user. Requires `webhooks:write` scope and the `developer` entitlement.",
+				"Creates a webhook for the authenticated user. Requires `webhooks:write` scope and the `developer` entitlement. Deliveries are signed following Standard Webhooks. Omit `secret` to have Bredbox generate one, or pass your own `whsec_` secret (base64 of 24 to 64 random bytes). Only this response and the rotate-secret response include the full `secret`.",
 			method: "POST",
 			path: "/webhooks",
 			args: [
@@ -38,7 +38,7 @@ export const webhooks: CommandGroup = {
 					wire: "secret",
 					in: "body",
 					type: "string",
-					required: true,
+					required: false,
 				},
 				{
 					name: "subscription-mode",
@@ -141,6 +141,26 @@ export const webhooks: CommandGroup = {
 			body: "none",
 			response: "json",
 			columns: ["id", "name", "url", "status", "event_types"],
+		},
+		{
+			name: "rotate-secret",
+			summary: "Rotate a webhook secret",
+			description:
+				"Replaces the webhook's signing secret with a newly generated `whsec_` secret and returns it. The old secret stops signing deliveries immediately. This is the only response other than create that includes the full `secret`. To set a secret of your own instead, send it as `secret` to PATCH /v2/webhooks/{webhookId}. Requires `webhooks:write` scope and the `developer` entitlement.",
+			method: "POST",
+			path: "/webhooks/{webhookId}/rotate-secret",
+			args: [
+				{
+					name: "webhook-id",
+					wire: "webhookId",
+					in: "path",
+					type: "string",
+					required: true,
+					positional: true,
+				},
+			],
+			body: "none",
+			response: "json",
 		},
 		{
 			name: "update",
