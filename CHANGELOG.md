@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.5.1](https://github.com/bredbox-app/cli/compare/cli-v0.5.0...cli-v0.5.1) (2026-11-06)
+
+
+### Bug Fixes
+
+* Fit tables to the terminal and strip search marks ([#10](https://github.com/bredbox-app/cli/issues/10)) ([a2608c8](https://github.com/bredbox-app/cli/commit/a2608c8f3b5ba84ad045409f4adaf7de73cd78a3))
+* Sync generated files with the live API ([829a99f](https://github.com/bredbox-app/cli/commit/829a99f5aa6d74854e5c60f90648b3cdc5121120))
+* Sync with live API ([#12](https://github.com/bredbox-app/cli/issues/12)) ([829a99f](https://github.com/bredbox-app/cli/commit/829a99f5aa6d74854e5c60f90648b3cdc5121120))
+
 ## [0.5.0](https://github.com/bredbox-app/cli/compare/cli-v0.4.0...cli-v0.5.0) (2026-11-04)
 
 
