@@ -5419,7 +5419,10 @@
 															"bookmarks_html",
 															"plain_text",
 															"instapaper_csv",
-															"pocket_zip"
+															"pocket_zip",
+															"wallabag_csv",
+															"wallabag_json",
+															"wallabag_zip"
 														]
 													},
 													"created_at": {
@@ -5615,7 +5618,10 @@
 												"bookmarks_html",
 												"plain_text",
 												"instapaper_csv",
-												"pocket_zip"
+												"pocket_zip",
+												"wallabag_csv",
+												"wallabag_json",
+												"wallabag_zip"
 											]
 										},
 										"item_count": {
