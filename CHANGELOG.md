@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.2](https://github.com/bredbox-app/cli/compare/cli-v0.5.1...cli-v0.5.2) (2026-11-13)
+
+
+### Bug Fixes
+
+* Sync with live API ([#13](https://github.com/bredbox-app/cli/issues/13)) ([6d2d66e](https://github.com/bredbox-app/cli/commit/6d2d66e4e933874e5033e7a0be8783ec3b4dc21d))
+
 ## [0.5.1](https://github.com/bredbox-app/cli/compare/cli-v0.5.0...cli-v0.5.1) (2026-11-06)
 
 
