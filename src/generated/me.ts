@@ -258,7 +258,7 @@ export const me: CommandGroup = {
 					name: "confirm",
 					summary: "Confirm a privacy deletion request",
 					description:
-						"Confirms a pending privacy request using the raw email token, promotes the job to pending, and enqueues background processing.",
+						"Confirms a pending privacy request using the raw email token, promotes the job to pending, and enqueues background processing. Confirming an account deletion also locks the account, so it can't be signed in to while the deletion runs.",
 					method: "POST",
 					path: "/me/privacy/confirm",
 					args: [
