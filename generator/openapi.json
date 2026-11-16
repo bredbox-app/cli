@@ -10500,7 +10500,7 @@
 				],
 				"x-fern-sdk-method-name": "confirm",
 				"x-forge-require-confirmation": "This confirms a pending deletion request. The data it covers is permanently deleted.",
-				"description": "Confirms a pending privacy request using the raw email token, promotes the job to pending, and enqueues background processing.",
+				"description": "Confirms a pending privacy request using the raw email token, promotes the job to pending, and enqueues background processing. Confirming an account deletion also locks the account, so it can't be signed in to while the deletion runs.",
 				"operationId": "post_MePrivacyConfirm",
 				"requestBody": {
 					"content": {
